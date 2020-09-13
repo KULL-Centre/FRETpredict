@@ -19,7 +19,7 @@ import pkg_resources
 import yaml
 
 #: Name of the directory in the package that contains the library data.
-LIBDIR = "./lib"
+LIBDIR = "lib"
 
 def find_file(filename, pkglibdir=LIBDIR):
     """
@@ -81,6 +81,7 @@ class RotamerLibrary(object):
         logger.debug("[rotamers] populations = {0[data]}".format(self.lib))
 
         self.top = MDAnalysis.Universe(self.lib['topology'])
+        self.atoms = self.lib['atoms']
         data = np.loadtxt(self.lib['data'], dtype='float32',usecols=(2,3,4,5))
         self.coord = data.reshape((data.shape[0] // len(self.top.atoms),len(self.top.atoms), 4))[:,:,:3].swapaxes(0, 1)
         self.weights = data.reshape((data.shape[0] // len(self.top.atoms),len(self.top.atoms), 4))[:,0,3]

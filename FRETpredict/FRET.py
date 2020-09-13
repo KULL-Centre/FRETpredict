@@ -1,442 +1,235 @@
 # -*- coding: utf-8 -*-
 """
-FRETPrediction Class
---------------------
+FRET prediction Class
+---------------------
 
 Class to perform Fluorescence Resonance Energy Transfer calculations given two positions for the fluorofores.
 
 """
 
-import os
-
 # Coordinates and arrays
 import numpy as np
+import h5py
 import MDAnalysis
 import math
-import MDAnalysis.analysis.distances as mda_dist
 
 # Logger
 import logging
 
 # Inner imports
-from DEERpredict.utils import Operations
-import DEERpredict.libraries
-
-logger = logging.getLogger("MDAnalysis.app")
+from FRETpredict.utils import Operations
 
 class FRETpredict(Operations):
     """Calculation of FRET signal between two chromophores."""
 
-    def __init__(self, protein_structure, residues, record_frames=False, **kwargs):
+    def __init__(self, protein, residues, record_frames=False, **kwargs):
         """
-
         Args:
-            protein_structure (:py:class:`MDAnalysis.core.universe.Universe`):
+            protein (:py:class:`MDAnalysis.core.universe.Universe`):
             residues (list(:py:class:`str`)):
         :Keywords:
         """
-
-        Operations.__init__(self, protein_structure, **kwargs)
-        self.libname_1 = kwargs.pop('libname_1', 'Alexa 488 150cutoff')
-        self.libname_2 = kwargs.pop('libname_2', 'Alexa 594 150cutoff')
-        self.lib_1 = DEERpredict.libraries.RotamerLibrary(self.libname_1)
-        self.lib_2 = DEERpredict.libraries.RotamerLibrary(self.libname_2)
-        self.k2_calc_static = kwargs.pop('k2_calc_static', False)
-        self.k2_calc_dyn = kwargs.pop('k2_calc_dynamic', False)
+        Operations.__init__(self, protein, **kwargs)
+        self.residues = residues
+        self.k2array = np.empty(0)
+        self.rijarray = np.empty(0)
         # loads all args and kwargs
         self.record_frames = record_frames
+        self.ra = -5
+        self.re = 20
+        self.nr = 501
+        self.rax = np.linspace(self.ra, self.re, self.nr)
+        self.vari = np.exp(-100*(self.rax)**2)
         self.r0 = kwargs.pop('r0', 5.4)
-        #
-
-        if self.chains:
-            output_file, ext = os.path.splitext(kwargs.pop('output_file', 'distance_profile'))
-            ext = ext or ".dat"
-            self.output_file = "{0}-{1[0]}{2[0]}-{1[1]}{2[1]}{3}".format(output_file, residues, self.chains, ext)
-            ext = ".png"
-            self.output_plot = "{0}-{1[0]}{2[0]}-{1[1]}{2[1]}{3}".format(output_file, residues, self.chains, ext)
-        else:
-            output_file, ext = os.path.splitext(kwargs.pop('output_file', 'distance_profile'))
-            ext = ext or ".dat"
-            self.output_file = "{0}-{1[0]}-{1[1]}{2}".format(output_file, residues, ext)
-            ext = ".png"
-            self.output_plot = "{0}-{1[0]}-{1[1]}{2}".format(output_file, residues, ext)
-
-        # Binning
-        rax = np.linspace(0, 1, 100)
-        distributions = np.zeros((self.replicas + 1, rax.size))
-
         if len(residues) != 2:
-            raise ValueError("The residue_list must contain exactly 2 residue numbers: current "
-                             "value {0}.".format(residues))
+            raise ValueError("The residue_list must contain exactly 2 "
+                             "residue numbers: current value {0}.".format(residues))
+            
+    def trajectoryAnalysis(self):
+        logging.info("Starting rotamer distance analysis of trajectory {:s} with labeled residues "
+                     "{:d} and {:d}".format(self.protein.trajectory.filename, self.residues[0], self.residues[1]))
+        f = h5py.File(self.output_prefix+'-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "w")
+        distributions = f.create_dataset("distributions",
+                (self.protein.trajectory.n_frames, self.rax.size), fillvalue=0, compression="gzip")
+        lib_1_weights_norm = self.lib_1.weights / np.sum(self.lib_1.weights)
+        lib_2_weights_norm = self.lib_2.weights / np.sum(self.lib_2.weights)
+        rotamer1, prot_atoms1, residue_sel1 = self.precalculate_rotamer(self.residues[0], self.chains[0], self.lib_1)
+        rotamer2, prot_atoms2, residue_sel2 = self.precalculate_rotamer(self.residues[1], self.chains[1], self.lib_2)
+        # For each trajectory frame, place the probes at the spin-labeled site using rotamer_placement(), calculate
+        # Boltzmann weights based on Lennard-Jones interactions and calculate weighted distributions of probe-probe separations
+        zarray = np.empty(0) # Array of steric partition functions (sum over Boltzmann weights)
+        allk2 = np.empty(0)
+        #old_k2array = np.empty(0)
+        for frame_ndx, _ in enumerate(self.protein.trajectory):
+            # Fit the rotamers onto the protein
+            rotamersSite1 = self.rotamer_placement(rotamer1, prot_atoms1, self.lib_1)
+            rotamersSite2 = self.rotamer_placement(rotamer2, prot_atoms2, self.lib_2)
 
-        logger.info("Starting rotamer distance analysis of trajectory "
-                    "{0}...".format(protein_structure.trajectory.filename))
-        logger.info("Rotamer library for position 1 = '{0}'".format(self.lib_1.name))
-        logger.info("Rotamer library for position 2 = '{0}'".format(self.lib_2.name))
-        logger.debug("Results will be written to {0}.".format(self.output_file))
+            boltz1, z1 = self.rotamerWeights(rotamersSite1, lib_1_weights_norm, residue_sel1)
+            boltz2, z2 = self.rotamerWeights(rotamersSite2, lib_2_weights_norm, residue_sel2)
+            zarray = np.append(zarray, [z1,z2])
+            if (z1 <= self.z_cutoff) or (z2 <= self.z_cutoff):
+                 continue
+            boltzmann_weights_norm1 = boltz1 / z1
+            boltzmann_weights_norm2 = boltz2 / z2
+            boltzmann_weights_norm =  boltzmann_weights_norm1.reshape(-1,1) * boltzmann_weights_norm2
 
-        # Pre-processing weights
-        lib1_norm = self.lib_1.weights / np.sum(self.lib_1.weights)
-        lib2_norm = self.lib_2.weights / np.sum(self.lib_2.weights)
+            #print('boltz',boltzmann_weights_norm.shape)
+            
+            rotamer1_c1 = rotamersSite1.select_atoms('name '+self.lib_1.atoms[0])
+            rotamer2_c1 = rotamersSite2.select_atoms('name '+self.lib_2.atoms[0])
+            rotamer1_c2 = rotamersSite1.select_atoms('name '+self.lib_1.atoms[1])
+            rotamer2_c2 = rotamersSite2.select_atoms('name '+self.lib_2.atoms[1])
 
-        self.frames_pre_replica = int((protein_structure.trajectory.n_frames - self.discard_frames) / self.replicas)
-        progressmeter = MDAnalysis.lib.log.ProgressMeter(math.ceil((self.stop_frame-self.start_frame)/self.jump_frame),
+            c1_rot1_pos = np.array([rotamer1_c1.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
+            c1_rot2_pos = np.array([rotamer2_c1.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
+            c2_rot1_pos = np.array([rotamer1_c2.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
+            c2_rot2_pos = np.array([rotamer2_c2.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
 
-                                                         interval=1)
-        if self.k2_calc_dyn:
-            self.kappa2 = []
+            """
+            c1_rot1_pos = np.array([i for x in rotamersSite1.trajectory for i in rotamer1_c1.positions])
+            c1_rot2_pos = np.array([i for x in rotamersSite2.trajectory for i in rotamer2_c1.positions])
+            c2_rot1_pos = np.array([i for x in rotamersSite1.trajectory for i in rotamer1_c2.positions])
+            c2_rot2_pos = np.array([i for x in rotamersSite2.trajectory for i in rotamer2_c2.positions])
+            """
+
+            #print('pos',c1_rot1_pos.shape,c1_rot2_pos.shape)
+
+            mu_1 = c2_rot1_pos - c1_rot1_pos
+            mu_1 /= np.linalg.norm(mu_1, axis=1, keepdims=True)
+
+            mu_2 = c1_rot2_pos - c2_rot2_pos
+            mu_2 /= np.linalg.norm(mu_2, axis=1, keepdims=True)
+
+            #print('mu',mu_1.shape,mu_2.shape)
+
+            mu_cosine = np.einsum('ik,jk->ij', mu_1, mu_2)
+
+            #print('cosine',mu_cosine.shape,mu_cosine.min(),mu_cosine.max(),mu_cosine.mean())
+
+            #mid_1 = (c2_rot1_pos - c1_rot1_pos)/2
+
+            #mid_2 = (c2_rot2_pos - c1_rot2_pos)/2
+
+            r_12 = c2_rot1_pos[:,np.newaxis,:] - c1_rot2_pos
+            r_12 /= np.linalg.norm(r_12, axis=2, keepdims=True)
+
+            r_21 = c1_rot1_pos[:,np.newaxis,:] - c2_rot2_pos
+            r_21 /= np.linalg.norm(r_21, axis=2, keepdims=True)
+
+            #print('r12',r_12.shape,'r21',r_21.shape)
+
+            trans_dip_moment12_rot1 = np.einsum('ijk,ik->ij', r_12, mu_1)
+            trans_dip_moment21_rot1 = np.einsum('ijk,ik->ij', r_21, mu_1)
+
+            trans_dip_moment_rot1 = (trans_dip_moment12_rot1 + trans_dip_moment21_rot1) / 2.
+
+            trans_dip_moment12_rot2 = np.einsum('ijk,jk->ij', r_12, mu_2)
+            trans_dip_moment21_rot2 = np.einsum('ijk,jk->ij', r_21, mu_2)
+
+            trans_dip_moment_rot2 = (trans_dip_moment12_rot2 + trans_dip_moment21_rot2) / 2.
+
+            #print('trans',trans_dip_moment_rot1.shape,trans_dip_moment_rot2.shape)
+            
+            #print('1',np.mean(trans_dip_moment_rot1))
+            #print('2',np.mean(trans_dip_moment_rot2))
+            k2 = np.power(mu_cosine - 3*trans_dip_moment_rot1*trans_dip_moment_rot2, 2)
+            allk2 = np.append(allk2,k2.flatten())
+            self.k2array = np.append(self.k2array,np.sum(k2*boltzmann_weights_norm))
+
+            """
+            kappa2_list = []
             weights_list = []
-            for protein in protein_structure.trajectory[
-                           self.start_frame:self.stop_frame:self.jump_frame]:  # discard first on gromacs xtc
-                if self.chains:
-                    rotamersSite1 = self.rotamer_placement(self.lib_1.data,
-                                                           protein_structure,
-                                                           residues[0],
-                                                           self.chains[0],
-                                                           probe_library=self.lib_1)
-                    rotamersSite2 = self.rotamer_placement(self.lib_2.data,
-                                                           protein_structure,
-                                                           residues[1],
-                                                           self.chains[1],
-                                                           probe_library=self.lib_2)
 
-                else:
-                    rotamersSite1 = self.rotamer_placement(self.lib_1.data,
-                                                           protein_structure,
-                                                           residues[0],
-                                                           probe_library=self.lib_1)
-                    rotamersSite2 = self.rotamer_placement(self.lib_2.data,
-                                                           protein_structure,
-                                                           residues[1],
-                                                           probe_library=self.lib_2)
-                boltz1 = self.lj_calculation(rotamersSite1, protein_structure, residues[0], fret=True)
-                boltz1 = np.multiply(lib1_norm, boltz1)
-                z_1 = np.nansum(boltz1)
-                if z_1 == 0:
-                    continue
-                boltzman_weights_norm1 = boltz1 / z_1
+            for index_1, boltz_1 in enumerate(boltzmann_weights_norm1):
+                mutual_displacement = np.dot(mu_2, mu_1[index_1].T)
 
-                boltz2 = self.lj_calculation(rotamersSite2, protein_structure, residues[1], fret=True)
-                boltz2 = np.multiply(lib2_norm, boltz2)
-                z_2 = np.nansum(boltz2)
-                if z_2 == 0:
-                    continue
-                boltzman_weights_norm2 = boltz2 / z_2
+                outer_vect1 = c2_rot1_pos[index_1] - c1_rot2_pos
+                outer_vect1 /= np.linalg.norm(outer_vect1, axis=1)[:, np.newaxis]
+                outer_vect2 = c1_rot1_pos[index_1] - c2_rot2_pos
+                outer_vect2 /= np.linalg.norm(outer_vect2, axis=1)[:, np.newaxis]
 
-                # define the atoms to measure the distances between
-                if self.libname_1.split()[1] == '488':
-                    rotamer1_c11 = rotamersSite1.select_atoms("name C11")
-                    rotamer2_c11 = rotamersSite2.select_atoms("name C17")
-                    rotamer1_c12 = rotamersSite1.select_atoms("name C12")
-                    rotamer2_c12 = rotamersSite2.select_atoms("name C18")
-                else:
-                    rotamer1_c11 = rotamersSite1.select_atoms("name C17")
-                    rotamer2_c11 = rotamersSite2.select_atoms("name C11")
-                    rotamer1_c12 = rotamersSite1.select_atoms("name C18")
-                    rotamer2_c12 = rotamersSite2.select_atoms("name C12")
-                c11_probe1_pos = np.array([i for x in rotamersSite1.trajectory for i in rotamer1_c11.positions])
-                c11_probe2_pos = np.array([i for x in rotamersSite2.trajectory for i in rotamer2_c11.positions])
+                trans_dip_moment1_probe1 = np.dot(outer_vect1, mu_1[index_1].T)
+                trans_dip_moment2_probe1 = np.dot(outer_vect2, mu_1[index_1].T)
 
-                c12_probe1_pos = np.array([i for x in rotamersSite1.trajectory for i in rotamer1_c12.positions])
-                c12_probe2_pos = np.array([i for x in rotamersSite2.trajectory for i in rotamer2_c12.positions])
+                for index_2, boltz_2 in enumerate(boltzmann_weights_norm2):  # could we take out this for loop?
+                    trans_dip_moment1_probe2 = np.dot(outer_vect1[index_2], mu_2[index_2])
+                    trans_dip_moment2_probe2 = np.dot(outer_vect2[index_2], mu_2[index_2])
 
-                inner_probe1_vect = c12_probe1_pos - c11_probe1_pos
-                inner_probe1_vect /= np.linalg.norm(inner_probe1_vect, axis=1)[:, np.newaxis]
+                    new_k2 = np.power((mutual_displacement[index_2] -
+                                       ((3. / 4.) * (trans_dip_moment1_probe1[index_2] +
+                                                     trans_dip_moment2_probe1[index_2]) * (
+                                            trans_dip_moment1_probe2 +
+                                            trans_dip_moment2_probe2))), 2)
+                    kappa2_list.append(new_k2)
+                    weights_list.append(boltz_1*boltz_2)
+            old_k2array = np.append(old_k2array, np.average(kappa2_list, weights=weights_list))
+            """
 
-                inner_probe2_vect = c11_probe2_pos - c12_probe2_pos
-                inner_probe2_vect /= np.linalg.norm(inner_probe2_vect, axis=1)[:, np.newaxis]
-
-                for position1_index, position1 in enumerate(lib1_norm):
-                        mutual_displacement = np.dot(inner_probe2_vect, inner_probe1_vect[position1_index].T)
-
-                        outer_vect1 = c12_probe1_pos[position1_index] - c11_probe2_pos
-                        outer_vect1 /= np.linalg.norm(outer_vect1, axis=1)[:, np.newaxis]
-                        outer_vect2 = c11_probe1_pos[position1_index] - c12_probe2_pos
-                        outer_vect2 /= np.linalg.norm(outer_vect2, axis=1)[:, np.newaxis]
-
-                        trans_dip_moment1_probe1 = np.dot(outer_vect1, inner_probe1_vect[position1_index].T)
-                        trans_dip_moment2_probe1 = np.dot(outer_vect2, inner_probe1_vect[position1_index].T)
-
-                        for pos2_index, element in enumerate(lib2_norm):  # could we take out this for loop?
-                            trans_dip_moment1_probe2 = np.dot(outer_vect1[pos2_index], inner_probe2_vect[pos2_index])
-                            trans_dip_moment2_probe2 = np.dot(outer_vect2[pos2_index], inner_probe2_vect[pos2_index])
-
-                            new_k2 = np.power((mutual_displacement[pos2_index] -
-                                               ((3. / 4.) * (trans_dip_moment1_probe1[pos2_index] +
-                                                             trans_dip_moment2_probe1[pos2_index]) * (
-                                                    trans_dip_moment1_probe2 +
-                                                    trans_dip_moment2_probe2))), 2)
-                            self.kappa2.append(new_k2)
-                            weights_list.append(boltzman_weights_norm1[position1_index] *
-                                                boltzman_weights_norm2[pos2_index])
-        if self.k2_calc_dyn:
-            # self.kappa2 = np.average(self.kappa2)
-            self.kappa2 = np.average(self.kappa2, weights=weights_list)
-
-            # kappa2 = np.average(kappa2)
-            logger.info('Dynamic K2 calculated: {:.3f}'.format(self.kappa2))
-        if self.k2_calc_static:
-            kappa2_hold = []
-            weights_list = []
-        for protein in protein_structure.trajectory[self.start_frame:self.stop_frame:self.jump_frame]:  # discard first on gromacs xtc
-            progressmeter.echo(int(protein.frame/self.jump_frame))
-            self.current_replica = ((protein.frame - self.discard_frames) // self.frames_pre_replica) # FIXME: not correct
-            if self.chains:
-                rotamersSite1 = self.rotamer_placement(self.lib_1.data,
-                                                       protein_structure,
-                                                       residues[0],
-                                                       self.chains[0],
-                                                       probe_library=self.lib_1)
-                rotamersSite2 = self.rotamer_placement(self.lib_2.data,
-                                                       protein_structure,
-                                                       residues[1],
-                                                       self.chains[1],
-                                                       probe_library=self.lib_2)
-
-            else:
-                rotamersSite1 = self.rotamer_placement(self.lib_1.data,
-                                                       protein_structure,
-                                                       residues[0],
-                                                       probe_library=self.lib_1)
-                rotamersSite2 = self.rotamer_placement(self.lib_2.data,
-                                                       protein_structure,
-                                                       residues[1],
-                                                       probe_library=self.lib_2)
-
-            boltz1 = self.lj_calculation(rotamersSite1, protein_structure, residues[0], fret=True)
-            # print 'boltz 1'
-            # print boltz1
-            boltz1 = np.multiply(lib1_norm, boltz1)
-            z_1 = np.nansum(boltz1)
-            # print z_1
-            if z_1 == 0:
-                print('no rotamer could be placed for site 1')
-                continue
-            boltzman_weights_norm1 = boltz1 / z_1
-
-            boltz2 = self.lj_calculation(rotamersSite2, protein_structure, residues[1], fret=True)
-            boltz2 = np.multiply(lib2_norm, boltz2)
-            z_2 = np.nansum(boltz2)
-            # print z_2
-            if z_2 == 0:
-                print('no rotamer could be placed for site 2')
-                continue
-            boltzman_weights_norm2 = boltz2 / z_2
-
-            # define the atoms to measure the distances between
-            frame_distributions = np.zeros((rax.size))
             rotamer1oxigen = rotamersSite1.select_atoms("name O6")
             rotamer2oxigen = rotamersSite2.select_atoms("name O6")
 
-            size = len(rotamersSite2.trajectory)
-            oxi1_pos = np.array([rotamer1oxigen.positions for x in rotamersSite1.trajectory])
-            oxi2_pos = np.array([i for x in rotamersSite2.trajectory for i in rotamer2oxigen.positions])
-            if self.k2_calc_dyn:
-                # self.kappa2 = np.full(len(oxi2_pos), self.kappa2)  # average k2 calculated previously
-                pass
+            oxi1_pos = np.array([rotamer1oxigen.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
+            oxi2_pos = np.array([rotamer2oxigen.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
+            # Distances between nitroxide groups
+            dists_array = np.linalg.norm(oxi1_pos[:,np.newaxis,:] - oxi2_pos, axis=2) / 10
+            self.rijarray = np.append(self.rijarray,np.sum(dists_array*boltzmann_weights_norm))
+            dists_array = np.round((self.nr * (dists_array - self.ra)) / (self.re - self.ra)).astype(int).flatten()
+            distribution = np.bincount(dists_array, weights=boltzmann_weights_norm.flatten(), minlength=self.rax.size) 
+            distributions[frame_ndx] = distribution
+        f.close()
+        np.savetxt(self.output_prefix+'-Z-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),zarray.reshape(-1,2))
+        np.savetxt(self.output_prefix+'-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),self.k2array)
+        np.savetxt(self.output_prefix+'-allk2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),allk2)
+        #np.savetxt(self.output_prefix+'-old_k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),old_k2array)
+
+    def save(self,filename):
+        f = h5py.File(filename, "r")
+        distributions = f.get('distributions')
+        if isinstance(self.weights, np.ndarray):
+            if self.weights.size != distributions.shape[0]:
+                    logging.info('Weights array has size {} whereas the number of frames is {}'.
+                            format(self.weights.size, distributions.shape[0]))
+                    raise ValueError('Weights array has size {} whereas the number of frames is {}'.
+                            format(self.weights.size, distributions.shape[0]))
+        elif self.weights == False:
+            self.weights = np.ones(distributions.shape[0])
+        else:
+            logging.info('Weights argument should be a numpy array')
+            raise ValueError('Weights argument should be a numpy array')
+        distribution = np.nansum(distributions*self.weights.reshape(-1,1), 0)
+        frame_inv_distr = np.fft.ifft(distribution) * np.fft.ifft(self.vari)
+        smoothed = np.real(np.fft.fft(frame_inv_distr))
+        smoothed /= np.trapz(smoothed, self.rax)
+        np.savetxt(self.output_prefix + '-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+                np.c_[self.rax[100:401], smoothed[200:]],
+                   header='distance distribution')
+        np.savetxt(self.output_prefix + '-dist-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+                np.c_[self.rax, distribution],
+                   header='distance distribution')
+        f.close()
+        e_static = 1. / ( 1 + 2/3./self.k2array * ( np.power(self.rijarray / self.r0, 6) ) )
+        e_dynamic = 1. / ( 1 + 2/3./np.sum(self.k2array*self.weights) * (np.power(self.rijarray / self.r0, 6)) )
+        np.savetxt(self.output_prefix + '-efficiency-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+            np.c_[e_dynamic, e_static, self.weights],header='E_dynamic E_static weights')
+
+
+
+
+    def run(self, **kwargs):
+        # Output
+        self.output_prefix = kwargs.get('output_prefix', 'res')
+        # Input
+        self.load_file = kwargs.get('load_file', False)
+        # Weights for each frame
+        self.weights = kwargs.get('weights', False)
+        if self.load_file:
+            if os.path.isfile(self.load_file):
+                logging.info('Loading pre-computed data from {} - will not load trajectory file.'.format(self.load_file))
             else:
-                self.kappa2 = np.full(len(oxi2_pos), 2 / 3)
-            if self.k2_calc_static:
-                if self.libname_1.split()[1] == '488':
-                    rotamer1_c11 = rotamersSite1.select_atoms("name C11")
-                    rotamer2_c11 = rotamersSite2.select_atoms("name C17")
-                    rotamer1_c12 = rotamersSite1.select_atoms("name C12")
-                    rotamer2_c12 = rotamersSite2.select_atoms("name C18")
-                else:
-                    rotamer1_c11 = rotamersSite1.select_atoms("name C17")
-                    rotamer2_c11 = rotamersSite2.select_atoms("name C11")
-                    rotamer1_c12 = rotamersSite1.select_atoms("name C18")
-                    rotamer2_c12 = rotamersSite2.select_atoms("name C12")
-
-                c11_probe1_pos = np.array([i for x in rotamersSite1.trajectory for i in rotamer1_c11.positions])
-                c11_probe2_pos = np.array([i for x in rotamersSite2.trajectory for i in rotamer2_c11.positions])
-
-                c12_probe1_pos = np.array([i for x in rotamersSite1.trajectory for i in rotamer1_c12.positions])
-                c12_probe2_pos = np.array([i for x in rotamersSite2.trajectory for i in rotamer2_c12.positions])
-
-                inner_probe1_vect = c12_probe1_pos - c11_probe1_pos
-                inner_probe1_vect /= np.linalg.norm(inner_probe1_vect, axis=1)[:, np.newaxis]
-
-                inner_probe2_vect = c11_probe2_pos - c12_probe2_pos
-                inner_probe2_vect /= np.linalg.norm(inner_probe2_vect, axis=1)[:, np.newaxis]
-
-            dists_array = np.zeros((1, size), dtype=np.float64)
-            p_of_k = []
-
-            for position1_index, position1 in enumerate(oxi1_pos):
-                mda_dist.distance_array(position1, oxi2_pos, result=dists_array, backend="OpenMP")
-                if self.k2_calc_static:
-                    self.kappa2 = np.full(len(oxi2_pos), 2 / 3)
-                    mutual_displacement = np.dot(inner_probe2_vect, inner_probe1_vect[position1_index].T)
-
-                    outer_vect1 = c12_probe1_pos[position1_index] - c11_probe2_pos
-                    outer_vect1 /= np.linalg.norm(outer_vect1, axis=1)[:, np.newaxis]
-                    outer_vect2 = c11_probe1_pos[position1_index] - c12_probe2_pos
-                    outer_vect2 /= np.linalg.norm(outer_vect2, axis=1)[:, np.newaxis]
-
-                    trans_dip_moment1_probe1 = np.dot(outer_vect1, inner_probe1_vect[position1_index].T)
-                    trans_dip_moment2_probe1 = np.dot(outer_vect2, inner_probe1_vect[position1_index].T)
-
-                    for pos2_index, element in enumerate(dists_array[0]):  # could we take out this for loop?
-                        trans_dip_moment1_probe2 = np.dot(outer_vect1[pos2_index], inner_probe2_vect[pos2_index])
-                        trans_dip_moment2_probe2 = np.dot(outer_vect2[pos2_index], inner_probe2_vect[pos2_index])
-
-                        new_k2 = np.power((mutual_displacement[pos2_index] -
-                                           ((3. / 4.) * (trans_dip_moment1_probe1[pos2_index] +
-                                                         trans_dip_moment2_probe1[pos2_index]) * (
-                                                trans_dip_moment1_probe2 +
-                                                trans_dip_moment2_probe2))), 2)
-                        self.kappa2[pos2_index] = new_k2
-                        kappa2_hold.append(new_k2)
-                        weights_list.append((boltzman_weights_norm1[position1_index] *
-                                                     boltzman_weights_norm2[pos2_index]))
-                dists_array /= 10.0
-                #print 'debugger dists_array'
-                #print dists_array
-                efficiency_array = self.fret_efficiency(dists_array, k2=self.kappa2, r0=self.r0)
-                #print 'efficiency_array'
-                #print efficiency_array
-
-                dists_array = np.round(100 * efficiency_array)-1  # correct?
-                #print 'debugger dists_array'
-                #if np.isnan(dists_array).any():
-                #    print 'nan found in dists_array'
-
-
-                for pos2_index, element in enumerate(dists_array[0]):  # could we take out this for loop?
-                    element = int(element)
-                    frame_distributions[element] += (boltzman_weights_norm1[position1_index] *
-                                                     boltzman_weights_norm2[pos2_index])
-            # print 'b weights debug 1, then 2'
-            # print boltzman_weights_norm1
-            # print boltzman_weights_norm2
-            distributions[0] += frame_distributions
-        if self.k2_calc_static:
-            logger.info('Static K2 calculated: {:.3f}'.format(np.average(kappa2_hold, weights=weights_list)))
-            # for i in np.linspace(0, 4, num=40):
-            #     if i < 1:
-            #         p_of_k.append((1 / (2 * np.sqrt(3 * i))) * np.log(2 + np.sqrt(3)))
-            #     else:
-            #         p_of_k.append((1 / (2 * np.sqrt(3 * i))) * np.log(((2 + np.sqrt(3)) / (np.sqrt(i) + np.sqrt(i - 1)))))
-            # print np.average(kappa2_hold, weights=weights_list)
-            # sns.set(style="ticks")
-            # # plt.hist(kappa2_hold, bins=40, normed=True)
-            # first = np.max(np.histogram(kappa2_hold, normed=True, weights=weights_list, bins=40)[0])
-            # print first
-            # plt.hist(kappa2_hold, bins=40, weights=weights_list, normed=True)
-            # plt.plot(np.linspace(0, 4, num=40), p_of_k, color='red')
-            # plt.axvline(np.average(kappa2_hold, weights=weights_list), color='green')
-            # plt.text(x=np.average(kappa2_hold, weights=weights_list)+0.1, y=0.9*first,
-            #          s=r'$\left\langle\kappa^{{2}}\right\rangle$ = {0:.3f}'.format(np.average(kappa2_hold,
-            #                                                                               weights=weights_list)))
-            # plt.title('Cutoff: {}'.format(self.output_file.split('_')[-1][:-15]))
-            # plt.xlabel('$\kappa^{2}$')
-            # plt.ylabel('$p(\kappa^{2})$')
-            # sns.despine()
-            # plt.savefig('p_of_k_{0}cutoff.png'.format(self.output_file.split('_')[-1][:-15]), dpi=600)
-            # plt.close()
-            self.kappa2 = np.average(kappa2_hold, weights=weights_list)
-
-
-        # print 'debugger kappa2'
-        # print self.kappa2
-        #
-        # print 'debugger rax'
-        # print rax
-        #
-        # print 'debugger distr'
-        # print distributions
-        try:
-            self.efficiency = np.average(rax, weights=~np.isnan(distributions[0]))
-            print('hello')
-            logger.info('FRET efficiency: {:.3f}'.format(self.efficiency))
-        except ZeroDivisionError:
-            logger.error('Unable to place rotamers, try a bigger rotamer library.')
-            return
-
-        if self.replicas == 1:
-            self.plot_and_save_fret(rax, residues, distributions)
-            # distributions = distributions[0] / (math.ceil((self.stop_frame-self.start_frame)/self.jump_frame))
-            # plt.plot(rax, distributions)
-            # plt.xlabel("FRET efficiency")
-            # plt.ylabel("Probability density")
-            # plt.savefig(self.output_plot, dpi=300)
-            # plt.close()
-            #
-            # with open(self.output_file, 'w') as OUTPUT:
-            #     for index, value in enumerate(rax):
-            #         OUTPUT.write('{0:>7.4f} {1:>7.4f}\n'.format(value, distributions[index]))
-            # logger.info("Distance distribution for residues {0[0]} - {0[1]} "
-            #             "was written to {1}".format(residues, self.output_file))
-            # logger.info("Distance distribution for residues {0[0]} - {0[1]} "
-            #             "was plotted to {1}".format(residues, self.output_plot))
-
-        # else:
-        #     inv_distr = np.fft.ifft(distributions[0]) * np.fft.ifft(vari)
-        #     distributions_global = np.real(np.fft.fft(inv_distr))
-        #     distributions_global = distributions_global / np.sum(distributions_global)
-        #     plt.plot(rax[100:401], distributions_global[200:501])
-        #     plt.xlim([1, 5])
-        #     plt.ylim([-np.max(distributions_global[200:501]) / 20,
-        #               np.max(distributions_global[200:501]) + np.max(distributions_global[200:501]) / 20])
-        #     plt.xlabel(r"Spin-label distance $d$ ($\AA$)")
-        #     plt.ylabel("Probability density")
-        #     plt.savefig(self.output_plot, dpi=300)
-        #     plt.close()
-        #
-        #     with open(self.output_file, 'w') as OUTPUT:
-        #         for index, distance in enumerate(rax[100:401]):
-        #             OUTPUT.write('{0:>7.4f} {1:>7.4f}\n'.format(distance, distributions_global[index + 200]))
-        #     logger.info("Distance distribution for residues {0[0]} - {0[1]} "
-        #                 "was written to {1}".format(residues, self.output_file))
-        #     logger.info("Distance distribution for residues {0[0]} - {0[1]} "
-        #                 "was plotted to {1}".format(residues, self.output_plot))
-        #
-        #     for replica in range(1, self.replicas + 1):
-        #         inv_distr = np.fft.ifft(distributions[replica]) * np.fft.ifft(vari)
-        #         distributions_replica = np.real(np.fft.fft(inv_distr))
-        #         distributions_replica = distributions_replica / np.sum(distributions_replica)
-        #         plt.plot(rax[100:401], distributions_replica[200:501])
-        #         plt.xlim([1, 5])
-        #         plt.ylim([-np.max(distributions_replica[200:501]) / 20,
-        #                   np.max(distributions_replica[200:501]) + np.max(distributions_replica[200:501]) / 20])
-        #         plt.xlabel(r"Spin-label distance $d$ ($\AA$)")
-        #         plt.ylabel("Probability density")
-        #         if self.chains:
-        #             ext = ".png"
-        #             self.output_plot = "{0}-{1[0]}{2[0]}-{1[1]}{2[1]}_replica{3}{4}".format(output_file,
-        #                                                                                     residues,
-        #                                                                                     self.chains,
-        #                                                                                     replica,
-        #                                                                                     ext)
-        #             ext = '.dat'
-        #             self.output_file = "{0}-{1[0]}{2[0]}-{1[1]}{2[1]}_replica{3}{4}".format(output_file,
-        #                                                                                     residues,
-        #                                                                                     self.chains,
-        #                                                                                     replica,
-        #                                                                                     ext)
-        #         else:
-        #             ext = ".png"
-        #             self.output_plot = "{0}-{1[0]}-{1[1]}_replica{3}{4}".format(output_file,
-        #                                                                         residues,
-        #                                                                         replica,
-        #                                                                         ext)
-        #             ext = '.dat'
-        #             self.output_file = "{0}-{1[0]}-{1[1]}_replica{3}{4}".format(output_file,
-        #                                                                         residues,
-        #                                                                         replica,
-        #                                                                         ext)
-        #         plt.savefig(self.output_plot, dpi=300)
-        #         plt.close()
-        #         with open(self.output_file, 'w') as OUTPUT:
-        #             for index, distance in enumerate(rax[100:401]):
-        #                 OUTPUT.write('{0:>7.4f} {1:>7.4f}\n'.format(distance, distributions_replica[index + 200]))
-        #
-        #         logger.info("Distance distribution for residues {0[0]} - {0[1]} and replica {1} "
-        #                     "was written to {2}".format(residues, replica, self.output_file))
-        #         logger.info("Distance distribution for residues {0[0]} - {0[1]} and replica {1} "
-        #                     "was plotted to {2}".format(residues, replica, self.output_plot))
-    def results(self):
-        if self.k2_calc_static is False and self.k2_calc_dyn is False:
-            self.kappa2 = self.kappa2[0]
-        return self.libname_1, self.libname_2, self.efficiency, self.kappa2
+                logging.info('File {} not found!'.format(self.load_file))
+                raise FileNotFoundError('File {} not found!'.format(self.load_file))
+            self.save(self.load_file)    
+        else:
+            self.trajectoryAnalysis()
+            self.save(self.output_prefix+'-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]))

@@ -11,8 +11,8 @@ import os
 import numpy as np
 import MDAnalysis
 from MDAnalysis.coordinates.memory import MemoryReader
-from DEERPREdict.lennardjones import vdw, p_Rmin2, eps
-import DEERPREdict.libraries as libraries
+from FRETpredict.lennardjones import vdw, p_Rmin2, eps
+import FRETpredict.libraries as libraries
 import logging
 import scipy.special as special
 from scipy.spatial.distance import cdist
@@ -26,25 +26,27 @@ class Operations(object):
             protein (:py:class:`MDAnalysis.core.universe.Universe`): trajectory
         """
         self.protein = protein
-        self.libname = kwargs.get('libname', 'MTSSL 175K X1X2')
-        self.lib = libraries.RotamerLibrary(self.libname)
+        self.libname_1 = kwargs.get('libname_1', 'Alexa 488 100cutoff 3step')
+        self.lib_1 = libraries.RotamerLibrary(self.libname_1)
+        self.libname_2 = kwargs.get('libname_2', 'Alexa 594 100cutoff 3step')
+        self.lib_2 = libraries.RotamerLibrary(self.libname_2)
         self.temp = kwargs.get('temperature', 300)
         self.z_cutoff = kwargs.get('z_cutoff', 0.05)
         self.ign_H = kwargs.get('ign_H', True)
         self.chains = kwargs.get('chains', [None,None])
 
-    def precalculate_rotamer(self, residue, chain):
+    def precalculate_rotamer(self, residue, chain, lib):
         residue_sel = "resid {:d}".format(residue)
         if type(chain) == str:
             residue_sel += " and segid {:s}".format(chain)
         prot_Ca = self.protein.select_atoms('protein and name CA and '+residue_sel)
         prot_Co = self.protein.select_atoms('protein and name C and '+residue_sel)
         prot_N = self.protein.select_atoms('protein and name N and '+residue_sel)
-        probe_coords = np.zeros((len(self.lib.top.atoms),1, 3))
-        universe = MDAnalysis.Universe(self.lib.top.filename, probe_coords, format=MemoryReader, order='afc')
+        probe_coords = np.zeros((len(lib.top.atoms),1, 3))
+        universe = MDAnalysis.Universe(lib.top.filename, probe_coords, format=MemoryReader, order='afc')
         return universe, (prot_Ca, prot_Co, prot_N), residue_sel
         
-    def rotamer_placement(self, universe, prot_atoms):
+    def rotamer_placement(self, universe, prot_atoms, lib):
         prot_Ca, prot_Co, prot_N = prot_atoms
         offset = prot_Ca.positions.copy()
         Ca_coords = prot_Ca.positions - offset
@@ -58,13 +60,13 @@ class Operations(object):
         z_vector /= np.linalg.norm(z_vector)
         y_vector = np.cross(z_vector, x_vector)
         rotation = np.vstack([x_vector, y_vector, z_vector])
-        probe_coords = np.tensordot(self.lib.coord,rotation,axes=([2],[0])) + offset
+        probe_coords = np.tensordot(lib.coord,rotation,axes=([2],[0])) + offset
         universe.load_new(probe_coords, format=MemoryReader, order='afc')
         #save aligned rotamers
-        #mtssl = universe.select_atoms("all")
-        #with MDAnalysis.Writer("mtssl.pdb", mtssl.n_atoms) as W:
-        #    for ts in universe.trajectory:
-        #        W.write(mtssl)
+        mtssl = universe.select_atoms("all")
+        with MDAnalysis.Writer(lib.name+".pdb", mtssl.n_atoms) as W:
+            for ts in universe.trajectory:
+                W.write(mtssl)
         return universe
 
     def lj_calculation(self, fitted_rotamers, residue_sel):

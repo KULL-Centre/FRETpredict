@@ -10,6 +10,7 @@ Alexa 488 100cutoff 3step:
   data: rot_lib_matrix_alexa488_3step_100cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa488.pdb
+  atoms: [C11,C12]
 Alexa 488 10cutoff 2step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
@@ -46,6 +47,7 @@ Alexa 488 150cutoff 3step:
   data: rot_lib_matrix_alexa488_3step_150cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa488.pdb
+  atoms: [C11,C12]
 Alexa 488 15cutoff 2step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
@@ -136,24 +138,28 @@ Alexa 488 50cutoff 2step:
   data: rot_lib_matrix_alexa488_2step_50cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa488.pdb
+  atoms: [C11,C12]
 Alexa 488 50cutoff 3step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   data: rot_lib_matrix_alexa488_3step_50cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa488.pdb
+  atoms: [C11,C12]
 Alexa 488 75cutoff 2step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   data: rot_lib_matrix_alexa488_2step_75cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa488.pdb
+  atoms: [C11,C12]
 Alexa 488 75cutoff 3step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   data: rot_lib_matrix_alexa488_3step_75cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa488.pdb
+  atoms: [C11,C12]
 Alexa 594 100cutoff 2step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
@@ -166,6 +172,7 @@ Alexa 594 100cutoff 3step:
   data: rot_lib_matrix_alexa594_3step_100cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa594.pdb
+  atoms: [C17,C18]
 Alexa 594 10cutoff 2step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
@@ -202,6 +209,7 @@ Alexa 594 150cutoff 3step:
   data: rot_lib_matrix_alexa594_3step_150cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa594.pdb
+  atoms: [C17,C18]
 Alexa 594 15cutoff 2step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
@@ -292,21 +300,25 @@ Alexa 594 50cutoff 2step:
   data: rot_lib_matrix_alexa594_2step_50cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa594.pdb
+  atoms: [C17,C18]
 Alexa 594 50cutoff 3step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   data: rot_lib_matrix_alexa594_3step_50cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa594.pdb
+  atoms: [C17,C18]
 Alexa 594 75cutoff 2step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   data: rot_lib_matrix_alexa594_2step_75cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa594.pdb
+  atoms: [C17,C18]
 Alexa 594 75cutoff 3step:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   data: rot_lib_matrix_alexa594_3step_75cutoff.txt
   license: GPLv3
   topology: rot_lib_matrix_alexa594.pdb
+  atoms: [C17,C18]
