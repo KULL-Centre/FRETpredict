@@ -117,3 +117,9 @@ class Operations(object):
         # Multiply Boltzmann weights by library weights
         boltz = lib_weights_norm * boltz
         return boltz, np.nansum(boltz)
+
+    def weightedAvgStd(self, values, weights):
+        # Calculate the weighted average and standard deviation.
+        avg = np.average(values, weights=weights)
+        variance = np.average((values-avg)**2, weights=weights)
+        return (avg, np.sqrt(variance))

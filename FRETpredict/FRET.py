@@ -9,6 +9,7 @@ Class to perform Fluorescence Resonance Energy Transfer calculations given two p
 
 # Coordinates and arrays
 import numpy as np
+import pandas as pd
 import h5py
 import MDAnalysis
 import math
@@ -31,8 +32,6 @@ class FRETpredict(Operations):
         """
         Operations.__init__(self, protein, **kwargs)
         self.residues = residues
-        self.k2array = np.empty(0)
-        self.rijarray = np.empty(0)
         # loads all args and kwargs
         self.record_frames = record_frames
         self.ra = -5
@@ -58,6 +57,9 @@ class FRETpredict(Operations):
         # For each trajectory frame, place the probes at the spin-labeled site using rotamer_placement(), calculate
         # Boltzmann weights based on Lennard-Jones interactions and calculate weighted distributions of probe-probe separations
         zarray = np.empty(0) # Array of steric partition functions (sum over Boltzmann weights)
+        k2 = np.full(self.protein.trajectory.n_frames, np.nan)
+        estatic = np.full(self.protein.trajectory.n_frames, np.nan)
+        edynamic = np.full(self.protein.trajectory.n_frames, np.nan)
         allk2 = np.empty(0)
         #old_k2array = np.empty(0)
         for frame_ndx, _ in enumerate(self.protein.trajectory):
@@ -73,6 +75,7 @@ class FRETpredict(Operations):
             boltzmann_weights_norm1 = boltz1 / z1
             boltzmann_weights_norm2 = boltz2 / z2
             boltzmann_weights_norm =  boltzmann_weights_norm1.reshape(-1,1) * boltzmann_weights_norm2
+            boltzmann_weights_norm = boltzmann_weights_norm.flatten()
 
             #print('boltz',boltzmann_weights_norm.shape)
             
@@ -100,7 +103,7 @@ class FRETpredict(Operations):
 
             mu_2 = c1_rot2_pos - c2_rot2_pos
             mu_2 /= np.linalg.norm(mu_2, axis=1, keepdims=True)
-
+            
             #print('mu',mu_1.shape,mu_2.shape)
 
             mu_cosine = np.einsum('ik,jk->ij', mu_1, mu_2)
@@ -133,10 +136,8 @@ class FRETpredict(Operations):
             
             #print('1',np.mean(trans_dip_moment_rot1))
             #print('2',np.mean(trans_dip_moment_rot2))
-            k2 = np.power(mu_cosine - 3*trans_dip_moment_rot1*trans_dip_moment_rot2, 2)
-            allk2 = np.append(allk2,k2.flatten())
-            self.k2array = np.append(self.k2array,np.sum(k2*boltzmann_weights_norm))
-
+            k2_array = np.power(mu_cosine - 3*trans_dip_moment_rot1*trans_dip_moment_rot2, 2).flatten()
+            allk2 = np.append(allk2,k2_array)
             """
             kappa2_list = []
             weights_list = []
@@ -163,24 +164,41 @@ class FRETpredict(Operations):
                                             trans_dip_moment2_probe2))), 2)
                     kappa2_list.append(new_k2)
                     weights_list.append(boltz_1*boltz_2)
-            old_k2array = np.append(old_k2array, np.average(kappa2_list, weights=weights_list))
-            """
+            k2_array2 = np.array(kappa2_list)
+            #k2avg = np.average(kappa2_list, weights=weights_list)
 
+            print('diff',np.abs(k2_array2-k2_array).sum(),np.abs(k2_array).min(),np.abs(k2_array2).min())
+            """
             rotamer1oxigen = rotamersSite1.select_atoms("name O6")
             rotamer2oxigen = rotamersSite2.select_atoms("name O6")
 
             oxi1_pos = np.array([rotamer1oxigen.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
             oxi2_pos = np.array([rotamer2oxigen.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
             # Distances between nitroxide groups
-            dists_array = np.linalg.norm(oxi1_pos[:,np.newaxis,:] - oxi2_pos, axis=2) / 10
-            self.rijarray = np.append(self.rijarray,np.sum(dists_array*boltzmann_weights_norm))
-            dists_array = np.round((self.nr * (dists_array - self.ra)) / (self.re - self.ra)).astype(int).flatten()
-            distribution = np.bincount(dists_array, weights=boltzmann_weights_norm.flatten(), minlength=self.rax.size) 
+            dists_array = np.linalg.norm(oxi1_pos[:,np.newaxis,:] - oxi2_pos, axis=2).flatten() / 10
+            k2avg = np.dot(k2_array, boltzmann_weights_norm)
+            ratio6 = np.power(dists_array / self.r0, 6)
+            """
+            if not np.isfinite((ratio6/k2_array).max()):
+                print((ratio6/k2_array).min(),(ratio6/k2_array).max(),k2_array[(ratio6/k2_array).argmax()],ratio6[(ratio6/k2_array).argmax()])
+            if ratio6.min()==0:
+                print(k2_array[ratio6==0],ratio6[ratio6==0],boltzmann_weights_norm[ratio6==0],dists_array[ratio6==0])
+            """    
+            estatic[frame_ndx] = np.dot( 1. / ( 1 + 2/3. * np.divide(ratio6,k2_array) ), boltzmann_weights_norm)
+            edynamic[frame_ndx] = np.dot( 1. / ( 1 + 2/3./k2avg * ratio6 ), boltzmann_weights_norm)
+            
+            k2[frame_ndx] = k2avg
+
+            dists_array = np.round((self.nr * (dists_array - self.ra)) / (self.re - self.ra)).astype(int)
+            distribution = np.bincount(dists_array, weights=boltzmann_weights_norm, minlength=self.rax.size) 
             distributions[frame_ndx] = distribution
         f.close()
         np.savetxt(self.output_prefix+'-Z-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),zarray.reshape(-1,2))
-        np.savetxt(self.output_prefix+'-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),self.k2array)
-        np.savetxt(self.output_prefix+'-allk2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),allk2)
+        np.savetxt(self.output_prefix+'-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),k2)
+        np.savetxt(self.output_prefix+'-Estatic-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),estatic)
+        np.savetxt(self.output_prefix+'-Edynamic-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),edynamic)
+        np.savetxt(self.output_prefix+'-allk2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+                np.c_[np.arange(0,4.1,.1)[:-1]+(np.arange(0,4.1,.1)[1]-np.arange(0,4.1,.1)[0])/2.,np.histogram(allk2,bins=np.arange(0,4.1,.1),density=True)[0]])
         #np.savetxt(self.output_prefix+'-old_k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),old_k2array)
 
     def save(self,filename):
@@ -205,16 +223,19 @@ class FRETpredict(Operations):
                 np.c_[self.rax[100:401], smoothed[200:]],
                    header='distance distribution')
         np.savetxt(self.output_prefix + '-dist-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
-                np.c_[self.rax, distribution],
+                np.c_[self.rax, distribution/np.trapz(distribution, self.rax)],
                    header='distance distribution')
         f.close()
-        e_static = 1. / ( 1 + 2/3./self.k2array * ( np.power(self.rijarray / self.r0, 6) ) )
-        e_dynamic = 1. / ( 1 + 2/3./np.sum(self.k2array*self.weights) * (np.power(self.rijarray / self.r0, 6)) )
-        np.savetxt(self.output_prefix + '-efficiency-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
-            np.c_[e_dynamic, e_static, self.weights],header='E_dynamic E_static weights')
-
-
-
+        k2 = np.loadtxt(self.output_prefix+'-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+        estatic = np.loadtxt(self.output_prefix+'-Estatic-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+        edynamic = np.loadtxt(self.output_prefix+'-Edynamic-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+        print(np.isfinite(k2).sum())
+        df = pd.DataFrame([self.weightedAvgStd(k2[np.isfinite(k2)],self.weights[np.isfinite(k2)]), 
+                self.weightedAvgStd(estatic[np.isfinite(k2)],self.weights[np.isfinite(k2)]), 
+                self.weightedAvgStd(edynamic[np.isfinite(k2)],self.weights[np.isfinite(k2)])], 
+                columns = ['Average', 'Error'], index=['k2','Estatic','Edynamic'])
+        df.to_pickle(self.output_prefix + '-weightedAvgStd-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+        print(df)
 
     def run(self, **kwargs):
         # Output
