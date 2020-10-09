@@ -63,10 +63,10 @@ class Operations(object):
         probe_coords = np.tensordot(lib.coord,rotation,axes=([2],[0])) + offset
         universe.load_new(probe_coords, format=MemoryReader, order='afc')
         #save aligned rotamers
-        mtssl = universe.select_atoms("all")
-        with MDAnalysis.Writer(lib.name+".pdb", mtssl.n_atoms) as W:
-            for ts in universe.trajectory:
-                W.write(mtssl)
+        #mtssl = universe.select_atoms("all")
+        #with MDAnalysis.Writer(lib.name+".pdb", mtssl.n_atoms) as W:
+        #    for ts in universe.trajectory:
+        #        W.write(mtssl)
         return universe
 
     def lj_calculation(self, fitted_rotamers, residue_sel):

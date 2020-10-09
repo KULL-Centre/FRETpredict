@@ -33,6 +33,76 @@ Alexa 488 200cutoff:
   license: GPLv3
   topology: rot_lib_matrix_alexa488.pdb
   atoms: [C11,C12]
+A48 C1R 50:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A48_C1R_50.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A48_C1R.pdb
+  atoms: [C2,C13 and resname A48]
+A59 C1R 50:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A59_C1R_50.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A59_C1R.pdb
+  atoms: [C1,C19]
+A48 C1R 75:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A48_C1R_75.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A48_C1R.pdb
+  atoms: [C2,C13 and resname A48]
+A59 C1R 75:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A59_C1R_75.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A59_C1R.pdb
+  atoms: [C1,C19]
+A48 C1R 100:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A48_C1R_100.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A48_C1R.pdb
+  atoms: [C2,C13 and resname A48]
+A59 C1R 100:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A59_C1R_100.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A59_C1R.pdb
+  atoms: [C1,C19]
+A48 C1R 150:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A48_C1R_150.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A48_C1R.pdb
+  atoms: [C2,C13 and resname A48]
+A59 C1R 150:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A59_C1R_150.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A59_C1R.pdb
+  atoms: [C1,C19]
+A48 C1R 200:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A48_C1R_200.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A48_C1R.pdb
+  atoms: [C2,C13 and resname A48]
+A59 C1R 200:
+  author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: TBD
+  data: rot_lib_matrix_A59_C1R_200.txt
+  license: GPLv3
+  topology: rot_lib_matrix_A59_C1R.pdb
+  atoms: [C1,C19]
 Alexa 488 300cutoff:
   author: JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
