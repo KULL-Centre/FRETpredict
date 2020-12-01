@@ -11,7 +11,7 @@ import os
 import numpy as np
 import MDAnalysis
 from MDAnalysis.coordinates.memory import MemoryReader
-from FRETpredict.lennardjones import vdw, p_Rmin2, eps
+from FRETpredict.lennardjones import p_Rmin2, eps
 import FRETpredict.libraries as libraries
 import logging
 import scipy.special as special
@@ -26,13 +26,14 @@ class Operations(object):
             protein (:py:class:`MDAnalysis.core.universe.Universe`): trajectory
         """
         self.protein = protein
-        self.libname_1 = kwargs.get('libname_1', 'Alexa 488 100cutoff 3step')
+        self.libname_1 = kwargs.get('libname_1', 'Alexa 488')
         self.lib_1 = libraries.RotamerLibrary(self.libname_1)
-        self.libname_2 = kwargs.get('libname_2', 'Alexa 594 100cutoff 3step')
+        self.libname_2 = kwargs.get('libname_2', 'Alexa 594')
         self.lib_2 = libraries.RotamerLibrary(self.libname_2)
         self.temp = kwargs.get('temperature', 300)
         self.z_cutoff = kwargs.get('z_cutoff', 0.05)
         self.ign_H = kwargs.get('ign_H', True)
+        self.electrostatic = kwargs.get('electrostatic', False)
         self.chains = kwargs.get('chains', [None,None])
 
     def precalculate_rotamer(self, residue, chain, lib):
@@ -69,7 +70,7 @@ class Operations(object):
         #        W.write(mtssl)
         return universe
 
-    def lj_calculation(self, fitted_rotamers, residue_sel):
+    def lj_calculation(self, fitted_rotamers, residue_sel, lib):
         gas_un = 1.9858775e-3 # CHARMM, in kcal/mol*K
         if self.ign_H:
             proteinNotSite = self.protein.select_atoms("protein and not type H and not ("+residue_sel+")")
@@ -77,15 +78,25 @@ class Operations(object):
         else:
             proteinNotSite = self.protein.select_atoms("protein and not ("+residue_sel+")")
             rotamerSel_LJ = fitted_rotamers.select_atoms("not (name CA or name C or name N or name O)")
+        if self.electrostatic:
+            rot_positive = rotamerSel_LJ.select_atoms('name '+' or name '.join(lib.positive))
+            rot_negative = rotamerSel_LJ.select_atoms('name '+' or name '.join(lib.negative))
+            charge = lambda x : -1 if x in rot_negative else 0.5 if x in rot_positive else 0
+            q_rotamer = np.array([charge(probe_atom) for probe_atom in rotamerSel_LJ])
+            prot_positive = proteinNotSite.select_atoms("(name CZ and resname ARG) or (name NZ and resname LYS)").indices
+            prot_negative = proteinNotSite.select_atoms("(name CG and resname ASP) or (name CD and resname GLU)").indices
+            prot_his = proteinNotSite.select_atoms("(name ND1 and resname HIS) or (name NE2 and resname HIS)").indices
+            charge = lambda x : -1 if x in prot_negative else 1 if x in prot_positive else 0.25 if x in prot_his else 0
+            q_prot = np.array([charge(prot_atom) for prot_atom in proteinNotSite.indices])
+            q_ij = np.multiply.outer(q_rotamer, q_prot)
             
         eps_rotamer = np.array([eps[probe_atom] for probe_atom in rotamerSel_LJ.types])
         rmin_rotamer = np.array([p_Rmin2[probe_atom] for probe_atom in rotamerSel_LJ.types])*0.5
-
-        eps_protein = np.array([eps[probe_atom] for probe_atom in proteinNotSite.types])
-        rmin_protein = np.array([p_Rmin2[probe_atom] for probe_atom in proteinNotSite.types])*0.5
+        eps_protein = np.array([eps[prot_atom] for prot_atom in proteinNotSite.types])
+        rmin_protein = np.array([p_Rmin2[prot_atom] for prot_atom in proteinNotSite.types])*0.5
         eps_ij = np.sqrt(np.multiply.outer(eps_rotamer, eps_protein))
-        
         rmin_ij = np.add.outer(rmin_rotamer, rmin_protein)
+
         #Convert atom groups to indices for efficiecy
         proteinNotSite = proteinNotSite.indices
         #Convert indices of protein atoms (constant within each frame) to positions
@@ -93,30 +104,31 @@ class Operations(object):
 
         rotamerSel_LJ = rotamerSel_LJ.indices
         lj_energy_pose = np.zeros(len(fitted_rotamers.trajectory))
+        dh_energy_pose = np.zeros(len(fitted_rotamers.trajectory))
+
         for rotamer_counter, rotamer in enumerate(fitted_rotamers.trajectory):
             d = MDAnalysis.lib.distances.distance_array(rotamer.positions[rotamerSel_LJ],proteinNotSite)
-            d = np.power(rmin_ij/d,6)
-            pair_LJ_energy = eps_ij*(d*d-2.*d)
-            lj_energy_pose[rotamer_counter] = pair_LJ_energy.sum()
-        return np.exp(-lj_energy_pose/(gas_un*self.temp))  # for new alignment method
-        # Slower implementation without for loop
-        #rot_coords = fitted_rotamers.trajectory.timeseries(rotamerSel_LJ)
-        #d = MDAnalysis.lib.distances.distance_array(rot_coords.reshape(-1,3),proteinNotSite).reshape(rot_coords.shape[0],rot_coords.shape[1],proteinNotSite.shape[0])
-        #d = np.power(rmin_ij[:,np.newaxis,:]/d,6)
-        #LJ_energy = (eps_ij[:,np.newaxis,:]*(d*d-2.*d)).sum(axis=(0,2))
-        #return np.exp(-LJ_energy/(gas_un*self.temp))
+            if self.electrostatic:
+                cutoff = (q_ij!=0) & (d<20)
+                pair_dh_energy = q_ij[cutoff]*7.0/d[cutoff]*np.exp(-d[cutoff]/10.0)
+                dh_energy_pose[rotamer_counter] = pair_dh_energy.sum()
+            cutoff = d<10
+            d = np.power(rmin_ij[cutoff]/d[cutoff],6)
+            pair_lj_energy = eps_ij[cutoff]*(d*d-2.*d)
+            lj_energy_pose[rotamer_counter] = pair_lj_energy.sum()
+        return np.exp(-lj_energy_pose/(gas_un*self.temp)-dh_energy_pose)  # for new alignment method
 
-    def rotamerWeights(self, rotamersSite, lib_weights_norm, residue_sel):
+    def rotamerWeights(self, rotamersSite, residue_sel, lib):
         # Calculate Boltzmann weights
-        boltz = self.lj_calculation(rotamersSite, residue_sel)
+        boltz = self.lj_calculation(rotamersSite, residue_sel, lib)
         # save external probabilities
-        # np.savetxt(self.output_prefix+'-boltz-{:s}.dat'.format(residue_sel.replace(" ", "")),boltz)
+        #np.savetxt(self.output_prefix+'-boltz-{:s}.dat'.format(residue_sel.replace(" ", "")),boltz)
         # Set to zero Boltzmann weights that are NaN
         boltz[np.isnan(boltz)] = 0.0
-
         # Multiply Boltzmann weights by library weights
-        boltz = lib_weights_norm * boltz
-        return boltz, np.nansum(boltz)
+        boltz = lib.weights * boltz
+        steric_z = np.sum(boltz)
+        return boltz/steric_z, steric_z
 
     def weightedAvgStd(self, values, weights):
         # Calculate the weighted average and standard deviation.

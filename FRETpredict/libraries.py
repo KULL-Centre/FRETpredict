@@ -65,26 +65,36 @@ class RotamerLibrary(object):
         Args:
             name (:py:class:`str`): name of the library (must exist in the registry of libraries, :data:`LIBRARIES`)
         """
-        self.name = name
+        self.name = name.split(' cutoff')[0]
         self.lib = {}
         try:
-            self.lib.update(LIBRARIES[name])  # make a copy
+            self.lib.update(LIBRARIES[self.name])  # make a copy
         except KeyError:
             raise ValueError("No rotamer library with name {0} known: must be one of {1}".format(name,
                                                                                                  list(LIBRARIES.keys())))
         logger.info("Using rotamer library '{0}' by {1[author]}".format(self.name, self.lib))
         logger.info("Please cite: {0[citation]}".format(self.lib))
-        # adjust paths
-        for k in 'data', 'topology':
-            self.lib[k] = find_file(self.lib[k])
-        logger.debug("[rotamers] ensemble = {0[data]} with topology = {0[topology]}".format(self.lib))
-        logger.debug("[rotamers] populations = {0[data]}".format(self.lib))
+        self.lib['filename'] = find_file(self.lib['filename'][:-2]+name.split(' cutoff')[1])
+        logger.debug("[rotamers] ensemble {:s} with topology {:s}.pdb".format(self.lib['filename'],
+                                                         self.lib['filename'].split('_cutoff')[0]))
+        logger.debug("[rotamers] populations {:s}".format(self.lib['filename']+'_weights.txt'))
 
-        self.top = MDAnalysis.Universe(self.lib['topology'])
-        self.atoms = self.lib['atoms']
-        data = np.loadtxt(self.lib['data'], dtype='float32',usecols=(2,3,4,5))
-        self.coord = data.reshape((data.shape[0] // len(self.top.atoms),len(self.top.atoms), 4))[:,:,:3].swapaxes(0, 1)
-        self.weights = data.reshape((data.shape[0] // len(self.top.atoms),len(self.top.atoms), 4))[:,0,3]
+        if not os.path.isfile(self.lib['filename']+'.dcd'):
+            raise ValueError("No trajectory named {0}.dcd".format(self.lib['filename']))
+        if not os.path.isfile(self.lib['filename']+'_weights.txt'):
+            raise ValueError("No file named {0}_weights.txt".format(self.lib['filename']+'_weights.txt'))
+
+        self.top = MDAnalysis.Universe(self.lib['filename'].split('_cutoff')[0]+'.pdb')
+        self.mu = self.lib['mu']
+        self.r = self.lib['r']
+        self.positive = self.lib['positive']
+        self.negative = self.lib['negative']
+        traj = MDAnalysis.Universe(self.lib['filename'].split('_cutoff')[0]+'.pdb',
+                                                       self.lib['filename']+'.dcd')
+        # extract coordinates from XTC trajectory
+        self.coord = traj.trajectory.timeseries(traj.atoms)
+        self.weights = np.loadtxt(self.lib['filename']+'_weights.txt')
+        self.weights /= np.sum(self.weights)
 
     def __repr__(self):
         """
