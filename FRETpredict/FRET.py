@@ -1,202 +1,461 @@
 # -*- coding: utf-8 -*-
 """
 FRET prediction Class
----------------------
+=====================
 
-Class to perform Fluorescence Resonance Energy Transfer calculations given two positions for the fluorofores.
+Class to perform Fluorescence Resonance Energy Transfer calculations given rotamer libraries for the fluorophores.
 
 """
 
 # Coordinates and arrays
+import os
 import numpy as np
 import pandas as pd
 import h5py
+import logging
 import MDAnalysis
 import math
 
-# Logger
-import logging
-
 # Inner imports
-from FRETpredict.utils import Operations
+from utils import Operations
+
 
 class FRETpredict(Operations):
-    """Calculation of FRET signal between two chromophores."""
+
+    """
+
+    Calculation of FRET signal between two chromophores.
+
+    Attributes
+    ==========
+
+        Operations.chains: str
+            Name of the protein chains in which the placement residues are located
+
+        Operations.protein: MDAnalysis.Universe
+            Protein MDAnalysis Universe object
+
+        residues: list of str
+            Placement residue number
+
+        z_cutoff: float
+            Cutoff value for Boltzmann partition function
+
+        r0 = float
+            Forster distance for the chromophores pair
+
+        dr: float
+            distance different between different bins in distance distribution calculation
+
+        rmin: int
+            Inferior limit for distance distribution calculation
+
+        rmax: int
+            Superior limit for distance distribution calculation
+
+        nr: int
+            number of bins for distance distribution calculation
+
+        rax: numpy.array
+            array of distance values of bins for distance distribution calculation
+
+        output_prefix: str
+            Prefix used in saving data to file
+
+        load_file: Bool
+            Load data from pre-existing file
+
+        weights: numpy.array
+            Boltzmann factors distribution
+
+        stdev: float
+
+    Methods
+    =======
+
+        trajectoryAnalysis:
+            Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in static, dynamic1, and
+            dynamic2 regimes.
+
+        save:
+            Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
+
+        run:
+            Run FRET Efficiency calculations by calling trajectoryAnalysis() and save() functions or by loading
+            pre-computed data from file.
+
+    """
 
     def __init__(self, protein, residues, **kwargs):
+
         """
-        Args:
-            protein (:py:class:`MDAnalysis.core.universe.Universe`):
-            residues (list(:py:class:`str`)):
-        :Keywords:
+
+        Parameters
+        ==========
+
+            protein: MDAnalysis.Universe
+                Protein MDAnalysis Universe object
+
+            residues: list of str
+                Placement residue number
+
         """
+
+        # Call the constructor of the Operations class
         Operations.__init__(self, protein, **kwargs)
+
+        # Attributes assignments
         self.residues = residues
+        self.z_cutoff = kwargs.get('z_cutoff', 0.05)
         self.r0 = kwargs.pop('r0', 5.4)
-        logging.basicConfig(filename=kwargs.get('log_file', 'log'),level=logging.INFO)
-        for i in range(2):
-            residue_sel = "resid {:d}".format(self.residues[i])
-            if type(self.chains[i]) == str:
-                residue_sel += " and segid {:s}".format(self.chains[i])
-            logging.info('{:s} = {:s}'.format(residue_sel,self.protein.select_atoms(residue_sel).atoms.resnames[0]))
-
-        dr = 0.05
+        self.dr = 0.05
         self.rmin = -5
-        self.rmax = kwargs.get('rmax', 12)*2 - self.rmin
-        self.nr = int(round((self.rmax-self.rmin)/dr,0) + 1)
+        self.rmax = kwargs.get('rmax', 12) * 2 - self.rmin
+        self.nr = int(round((self.rmax - self.rmin) / self.dr, 0) + 1)
         self.rax = np.linspace(self.rmin, self.rmax, self.nr)
+        self.output_prefix = kwargs.get('output_prefix', 'res')
+        self.load_file = kwargs.get('load_file', False)
+        self.weights = kwargs.get('weights', False)
+        self.stdev = kwargs.get('filter_stdev', 0.02)
 
+        # Logging set up
+        logging.basicConfig(filename=kwargs.get('log_file', 'log'), level=logging.INFO)
+
+        # Write the string for the placement residues selection
+        for i in range(2):
+
+            residue_sel = "resid {:d}".format(self.residues[i])
+
+            # If chains are specified, add them to the atom selection
+            if type(self.chains[i]) == str:
+
+                residue_sel += " and segid {:s}".format(self.chains[i])
+
+            # Loggin information on the selected residues
+            logging.info('{:s} = {:s}'.format(residue_sel, self.protein.select_atoms(residue_sel).atoms.resnames[0]))
+
+        # Raise error if the specified placement residues are different than two
         if len(residues) != 2:
+
             raise ValueError("The residue_list must contain exactly 2 "
                              "residue numbers: current value {0}.".format(residues))
-            
+
+    # TODO: Create function "Compute transition dipole moment vector"
+
+    # TODO: Create function "Compute center-to-center chromophore vector"
+
+    # TODO: Create function to calculate k2, Static, Dynamic1, and Dynamic2 averaging
+
     def trajectoryAnalysis(self):
+
+        """
+
+        Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in static and dynamic regimes
+
+        """
+
+        # Print info
         logging.info("Starting rotamer distance analysis of trajectory {:s} with labeled residues "
                      "{:d} and {:d}".format(self.protein.trajectory.filename, self.residues[0], self.residues[1]))
-        f = h5py.File(self.output_prefix+'-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "w")
-        distributions = f.create_dataset("distributions",
-                (self.protein.trajectory.n_frames, self.rax.size), fillvalue=0, compression="gzip")
+
+        # Create H5PY file
+        f = h5py.File(self.output_prefix + '-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "w")
+
+        # Initialize a H5PY dataset (~ numpy.array) named "distribution", with shape = (n_frames, rax.size))
+        distributions = f.create_dataset("distributions", (self.protein.trajectory.n_frames, self.rax.size),
+                                         fillvalue=0, compression="gzip")
+
+        # Select placement residue atoms, compute Lennard-Jones and Electrostatic (Debye-Huckel) parameters for
+        # Chromophore rotamers and Protein
         rotamer1, prot_atoms1, LJ_data1 = self.precalculate_rotamer(self.residues[0], self.chains[0], self.lib_1)
         rotamer2, prot_atoms2, LJ_data2 = self.precalculate_rotamer(self.residues[1], self.chains[1], self.lib_2)
-        # For each trajectory frame, place the probes at the spin-labeled site using rotamer_placement(), calculate
-        # Boltzmann weights based on Lennard-Jones interactions and calculate weighted distributions of probe-probe separations
-        zarray = np.empty(0) # Array of steric partition functions (sum over Boltzmann weights)
+
+        # For each trajectory frame of the protein, place the probes at the spin-labeled site using rotamer_placement(),
+        # calculate Boltzmann weights based on Lennard-Jones interactions and calculate weighted distributions of
+        # probe-probe separations
+
+        # Variable allocation
+        zarray = np.empty(0)  # Array of Boltzmann partition functions (sum over Boltzmann weights)
         k2_avg = np.full(self.protein.trajectory.n_frames, np.nan)
         esta_avg = np.full(self.protein.trajectory.n_frames, np.nan)
-        edyn_avg = np.full(self.protein.trajectory.n_frames, np.nan)
+        edyn1_avg = np.full(self.protein.trajectory.n_frames, np.nan)
+        edyn2_avg = np.full(self.protein.trajectory.n_frames, np.nan)
+        allk2 = np.empty(0)
+        allZ = np.empty(0)
 
         for frame_ndx, _ in enumerate(self.protein.trajectory):
+
             # Fit the rotamers onto the protein
+            # Each protein structure (i.e. trajectory frame) has m conformations for chromophore 1 and l conformations
+            # for chromophore 2
             rotamersSite1 = self.rotamer_placement(rotamer1, prot_atoms1, self.lib_1)
             rotamersSite2 = self.rotamer_placement(rotamer2, prot_atoms2, self.lib_2)
 
+            # Calculate Boltzmann weights based on Lennard-Jones interactions
             boltz1, z1 = self.rotamerWeights(rotamersSite1, self.lib_1, LJ_data1)
             boltz2, z2 = self.rotamerWeights(rotamersSite2, self.lib_2, LJ_data2)
-            boltzmann_weights_norm = (boltz1.reshape(-1,1) * boltz2).flatten()
-            zarray = np.append(zarray, [z1,z2])
-            if (z1 <= self.z_cutoff) or (z2 <= self.z_cutoff):
-                 continue
-            
-            rotamer1_c1 = rotamersSite1.select_atoms('name '+self.lib_1.mu[0])
-            rotamer2_c1 = rotamersSite2.select_atoms('name '+self.lib_2.mu[0])
-            rotamer1_c2 = rotamersSite1.select_atoms('name '+self.lib_1.mu[1])
-            rotamer2_c2 = rotamersSite2.select_atoms('name '+self.lib_2.mu[1])
 
+            # Calculate normalized Boltzmann weights (combined probability of the two dyes for each frame)
+            boltzmann_weights_norm = (boltz1.reshape(-1, 1) * boltz2).flatten()
+
+            # Create array of partition function values
+            allZ = np.append(allZ, boltzmann_weights_norm.flatten())
+
+            # Append Boltzmann partition functions of the two dyes for the frame to the array
+            zarray = np.append(zarray, [z1, z2])
+
+            # Compare Boltzmann partition function with cutoff
+            if (z1 <= self.z_cutoff) or (z2 <= self.z_cutoff):
+                continue
+
+            # Select Chromophore atoms for transition dipole vector calculation
+            rotamer1_c1 = rotamersSite1.select_atoms('name ' + self.lib_1.mu[0])
+            rotamer2_c1 = rotamersSite2.select_atoms('name ' + self.lib_2.mu[0])
+            rotamer1_c2 = rotamersSite1.select_atoms('name ' + self.lib_1.mu[1])
+            rotamer2_c2 = rotamersSite2.select_atoms('name ' + self.lib_2.mu[1])
+
+            # Select positions of Chromophore atoms for transition dipole vector
             c1_rot1_pos = np.array([rotamer1_c1.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
             c1_rot2_pos = np.array([rotamer2_c1.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
             c2_rot1_pos = np.array([rotamer1_c2.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
             c2_rot2_pos = np.array([rotamer2_c2.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
 
+            # Array of Unit vectors for transition dipole of chromophore 1
             mu_1 = c2_rot1_pos - c1_rot1_pos
             mu_1 /= np.linalg.norm(mu_1, axis=1, keepdims=True)
 
+            # Array of Unit vectors for transition dipole of chromophore 2
             mu_2 = c1_rot2_pos - c2_rot2_pos
             mu_2 /= np.linalg.norm(mu_2, axis=1, keepdims=True)
-            
+
+            # Different method for calculating transition dipole moments:
+            # Mean between C1-C2 vectors
+            # r_12 = c2_rot1_pos[:, np.newaxis, :] - c1_rot2_pos
+            # r_12 /= np.linalg.norm(r_12, axis=2, keepdims=True)
+            # r_21 = c1_rot1_pos[:, np.newaxis, :] - c2_rot2_pos
+            # r_21 /= np.linalg.norm(r_21, axis=2, keepdims=True)
+            # trans_dip_moment12_rot1 = np.einsum('ijk,ik->ij', r_12, mu_1)
+            # trans_dip_moment21_rot1 = np.einsum('ijk,ik->ij', r_21, mu_1)
+            # trans_dip_moment_rot1 = (trans_dip_moment12_rot1 + trans_dip_moment21_rot1) / 2.
+            # trans_dip_moment12_rot2 = np.einsum('ijk,jk->ij', r_12, mu_2)
+            # trans_dip_moment21_rot2 = np.einsum('ijk,jk->ij', r_21, mu_2)
+            # trans_dip_moment_rot2 = (trans_dip_moment12_rot2 + trans_dip_moment21_rot2) / 2.
+
+            # Calculate μ_si·μ_sj for k2 calculations
             mu_cosine = np.einsum('ik,jk->ij', mu_1, mu_2)
 
-            rotamer1centre = rotamersSite1.select_atoms('name '+self.lib_1.r[0])
-            rotamer2centre = rotamersSite2.select_atoms('name '+self.lib_2.r[0])
+            # Calculation of the vector uniting donor->acceptor centers (R_sij)
+            # Select chromophore centers atoms for each rotamer (specific atoms defined in rotamer library)
+            rotamer1centre = rotamersSite1.select_atoms('name ' + self.lib_1.r[0])
+            rotamer2centre = rotamersSite2.select_atoms('name ' + self.lib_2.r[0])
 
+            # Obtain coordinates of chromophore centers atom for each rotamer
             centre1_pos = np.array([rotamer1centre.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
             centre2_pos = np.array([rotamer2centre.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
-            
-            rvec = centre1_pos[:,np.newaxis,:] - centre2_pos
 
+            # Calculate R_sij vector and unitary R_sij vector
+            rvec = centre1_pos[:, np.newaxis, :] - centre2_pos
             rdist = np.linalg.norm(rvec, axis=2, keepdims=True)
-
             runitvec = rvec / rdist
 
+            # Convert distance in Ångstrom
             rdist = rdist.flatten() / 10
 
-            r_mu_1 = np.einsum('ijk,ik->ij', runitvec, mu_1)
-            r_mu_2 = np.einsum('ijk,jk->ij', runitvec, mu_2)
- 
-            k2 = np.power(mu_cosine - 3*r_mu_1*r_mu_2, 2).flatten()
-
-            r_12 = c2_rot1_pos[:,np.newaxis,:] - c1_rot2_pos
-            r_12 /= np.linalg.norm(r_12, axis=2, keepdims=True)
-
-            r_21 = c1_rot1_pos[:,np.newaxis,:] - c2_rot2_pos
-            r_21 /= np.linalg.norm(r_21, axis=2, keepdims=True)
-
-            trans_dip_moment12_rot1 = np.einsum('ijk,ik->ij', r_12, mu_1)
-            trans_dip_moment21_rot1 = np.einsum('ijk,ik->ij', r_21, mu_1)
-
-            trans_dip_moment_rot1 = (trans_dip_moment12_rot1 + trans_dip_moment21_rot1) / 2.
-
-            trans_dip_moment12_rot2 = np.einsum('ijk,jk->ij', r_12, mu_2)
-            trans_dip_moment21_rot2 = np.einsum('ijk,jk->ij', r_21, mu_2)
-
-            trans_dip_moment_rot2 = (trans_dip_moment12_rot2 + trans_dip_moment21_rot2) / 2.
-
-            k2_avg[frame_ndx] = np.dot(k2, boltzmann_weights_norm)
-
+            # Calculate (r/r0)^6 factor for FRET efficiency calculations
             ratio6 = np.power(rdist / self.r0, 6)
 
-            estatic = 1. / ( 1 + 2/3. * np.divide(ratio6,k2))
-            edynamic = 1. / ( 1 + 2/3./k2_avg[frame_ndx] * ratio6 )
- 
-            esta_avg[frame_ndx] = np.dot( estatic, boltzmann_weights_norm )
-            edyn_avg[frame_ndx] = np.dot( edynamic, boltzmann_weights_norm )
+            # Calculate R_sij·μ_sj, and R_sij·μ_si for k2 calculations
+            r_mu_1 = np.einsum('ijk,ik->ij', runitvec, mu_1)
+            r_mu_2 = np.einsum('ijk,jk->ij', runitvec, mu_2)
 
+            # Calculate Orientation factor k2 for each donor-acceptor rotamer combination
+            k2 = np.power(mu_cosine - 3 * r_mu_1 * r_mu_2, 2).flatten()
+
+            # Create array of k2 values
+            allk2 = np.append(allk2, k2.flatten())
+
+            # Orientation factor for dyanmic averaging is weighted by rotamers probability (Boltzmann weights),
+            # to account for reduced weight of high energy conformations
+
+            # Calculate Average Orientation factor <k2>
+            k2_avg[frame_ndx] = np.dot(k2, boltzmann_weights_norm)
+
+            # Calculation of average FRET efficiencies distributions
+            # Static Regime
+            estatic = 1. / (1 + 2 / 3. * np.divide(ratio6, k2))
+            esta_avg[frame_ndx] = np.dot(estatic, boltzmann_weights_norm)
+
+            # Dynamic1 Regime
+            edynamic = 1. / (1 + 2 / 3. / k2_avg[frame_ndx] * ratio6)
+            edyn1_avg[frame_ndx] = np.dot(edynamic, boltzmann_weights_norm)
+
+            # Dynamic2 Regime
+            A_avg = np.dot(3. / 2. * k2 / ratio6, boltzmann_weights_norm)
+            edyn2_avg[frame_ndx] = A_avg / (A_avg + 1)
+
+            # Calculate normalized rdist
             rdist = np.round((self.nr * (rdist - self.rmin)) / (self.rmax - self.rmin)).astype(int).flatten()
+
+            # Calculate weighted distribution of center-to-center distances between the two chromophores
             distribution = np.bincount(rdist, weights=boltzmann_weights_norm.flatten(), minlength=self.rax.size)
+
+            # Write the calculated distribution for each frame in the H5PY dataset
             distributions[frame_ndx] = distribution
+
+        # Close H5PY file
         f.close()
-        np.savetxt(self.output_prefix+'-Z-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),zarray.reshape(-1,2))
-        np.savetxt(self.output_prefix+'-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),k2_avg)
-        np.savetxt(self.output_prefix+'-Es-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),esta_avg)
-        np.savetxt(self.output_prefix+'-Ed-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),edyn_avg)
+
+        # Save distributions to file
+        # Save k2 weighted distribution
+        np.savetxt(self.output_prefix + '-Pk2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+                   np.c_[np.arange(0.0, 4.02, .04)[:-1] + .02,
+                         np.histogram(allk2, bins=np.arange(0.0, 4.02, .04), density=True, weights=allZ)[0]])
+
+        # Save Partition function distribution
+        np.savetxt(self.output_prefix + '-Z-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+                   zarray.reshape(-1, 2))
+
+        # Save <k2> distribution
+        np.savetxt(self.output_prefix + '-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), k2_avg)
+
+        # Save <E>_static distribution
+        np.savetxt(self.output_prefix + '-Es-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), esta_avg)
+
+        # Save <E>_dynamic1 distribution
+        np.savetxt(self.output_prefix + '-Ed1-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), edyn1_avg)
+
+        # Save <E>_dynamic2 distribution
+        np.savetxt(self.output_prefix + '-Ed2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), edyn2_avg)
 
     def save(self):
-        k2 = np.loadtxt(self.output_prefix+'-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+
+        """
+
+        Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
+
+        """
+
+        # Load <k2> distribution from file
+        k2 = np.loadtxt(self.output_prefix + '-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+
+        # Check if weights is an array
         if isinstance(self.weights, np.ndarray):
+
+            # Check if every k2 instance is associated with one weight
             if self.weights.size != k2.size:
-                    logging.info('Weights array has size {} whereas the number of frames is {}'.
-                            format(self.weights.size, k2.size))
-                    raise ValueError('Weights array has size {} whereas the number of frames is {}'.
-                            format(self.weights.size, k2.size))
+
+                # Warning log
+                logging.info('Weights array has size {} whereas the number of frames is {}'.
+                             format(self.weights.size, k2.size))
+
+                # Raise error
+                raise ValueError('Weights array has size {} whereas the number of frames is {}'.
+                                 format(self.weights.size, k2.size))
+
+        # If we want the average to be unweighted
         elif self.weights == False:
+
+            # Associate every k2 instance with a unitary weight
             self.weights = np.ones(k2.size)
+
+        # Other options will raise errors
         else:
+
+            # Warning log
             logging.info('Weights argument should be a numpy array')
+
+            # Raise error
             raise ValueError('Weights argument should be a numpy array')
-        f = h5py.File(self.output_prefix+'-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "r")
+
+        # Read data from H5PY file
+        f = h5py.File(self.output_prefix + '-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "r")
+
+        # Read distribution data from H5PY file
         distributions = f.get('distributions')
-        distribution = np.nansum(distributions*self.weights.reshape(-1,1), 0)
-        frame_inv_distr = np.fft.ifft(distribution) * np.fft.ifft(np.exp(-0.5*(self.rax/self.stdev)**2))
+
+        # Calculate the sum of the weighted distribution
+        distribution = np.nansum(distributions * self.weights.reshape(-1, 1), 0)
+
+        # Calculate smoothed distance distribution
+        frame_inv_distr = np.fft.ifft(distribution) * np.fft.ifft(np.exp(-0.5 * (self.rax / self.stdev) ** 2))
         smoothed = np.real(np.fft.fft(frame_inv_distr))
         smoothed /= np.trapz(smoothed, self.rax)
+
+        # Save distance distribution to file
         np.savetxt(self.output_prefix + '-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
-                np.c_[self.rax[100:-100], smoothed[200:]], header='distance distribution')
+                   np.c_[self.rax[100:-100], smoothed[200:]], header='distance distribution')
+
+        # Close H5PY file
         f.close()
-        estatic = np.loadtxt(self.output_prefix+'-Es-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
-        edynamic = np.loadtxt(self.output_prefix+'-Ed-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+
+        # Read FRET Efficiency data from file
+        estatic = np.loadtxt(self.output_prefix + '-Es-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+        edynamic1 = np.loadtxt(self.output_prefix + '-Ed1-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+        edynamic2 = np.loadtxt(self.output_prefix + '-Ed2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+
+        # k2, Static, Dynamic1, and Dynamic2 averaging
+        # Create DataFrame if only one value of k2 is present
         if k2.size == 1:
-            df = pd.Series([k2, estatic, edynamic], index=['k2','Estatic','Edynamic'])
+
+            df = pd.Series([k2, estatic, edynamic1, edynamic2], index=['k2', 'Estatic', 'Edynamic1', 'Edynamic2'])
+
+        # Create DataFrame of weighted averaged values
         else:
-            df = pd.DataFrame([self.weightedAvgSDSE(k2[np.isfinite(k2)],self.weights[np.isfinite(k2)]), 
-                self.weightedAvgSDSE(estatic[np.isfinite(k2)],self.weights[np.isfinite(k2)]), 
-                self.weightedAvgSDSE(edynamic[np.isfinite(k2)],self.weights[np.isfinite(k2)])], 
-                columns = ['Average', 'SD','SE'], index=['k2','Estatic','Edynamic'])
+
+            df = pd.DataFrame([self.weightedAvgSDSE(k2[np.isfinite(k2)], self.weights[np.isfinite(k2)]),
+                               self.weightedAvgSDSE(estatic[np.isfinite(k2)], self.weights[np.isfinite(k2)]),
+                               self.weightedAvgSDSE(edynamic1[np.isfinite(k2)], self.weights[np.isfinite(k2)]),
+                               self.weightedAvgSDSE(edynamic2[np.isfinite(k2)], self.weights[np.isfinite(k2)])],
+                              columns=['Average', 'SD', 'SE'], index=['k2', 'Estatic', 'Edynamic1', 'Edynamic2'])
+
+        # Save DataFrame in pickle format
         df.to_pickle(self.output_prefix + '-data-{:d}-{:d}.pkl'.format(self.residues[0], self.residues[1]))
 
     def run(self, **kwargs):
-        # Output
-        self.output_prefix = kwargs.get('output_prefix', 'res')
-        # Input
-        self.load_file = kwargs.get('load_file', False)
-        # Weights for each frame
-        self.weights = kwargs.get('weights', False)
-        self.stdev = kwargs.get('filter_stdev', 0.02)
+
+        """
+
+        Run FRET Efficiency calculations by calling trajectoryAnalysis() and save() functions or by loading
+        pre-computed data from file.
+
+        **kwags:
+        ========
+
+            data_filepath: str
+                Path of the data file with pre-computed data
+
+        """
+
+        data_filepath = kwargs.get('data_filepath', '')
+
+        # If a file with pre-computed data is already present
         if self.load_file:
-            if os.path.isfile(self.load_file):
-                logging.info('Loading pre-computed data from {} - will not load trajectory file.'.format(self.load_file))
+
+            # If the file path is correct
+            if os.path.isfile(data_filepath):
+
+                # Info log
+                logging.info(
+                    'Loading pre-computed data from {} - will not load trajectory file.'.format(data_filepath))
+
+            # If the file path is not correct
             else:
-                logging.info('File {} not found!'.format(self.load_file))
-                raise FileNotFoundError('File {} not found!'.format(self.load_file))
-            self.save(self.load_file)    
+
+                # Warning log
+                logging.info('File {} not found!'.format(data_filepath))
+
+                # Raise error
+                raise FileNotFoundError('File {} not found!'.format(data_filepath))
+
+            # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
+            self.save()
+
+        # If a file with pre-computed data isn't already present
         else:
+
+            # Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in static, dynamic1, and
+            # dynamic2 regimes.
             self.trajectoryAnalysis()
+
+            # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
             self.save()
