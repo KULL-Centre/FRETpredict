@@ -54,3 +54,5 @@ Contributors
 
 [Giulio Tesei (@gitesei)](https://github.com/gitesei)
 
+[Daniele Montepietra (@Monte95)](https://github.com/Monte95)
+
