@@ -122,9 +122,9 @@ class FRETpredict(Operations):
 
         # Attributes assignments
         self.residues = residues
-        self.donor = kwargs.get('donor', 488)  ############# TODO: Write documentation
-        self.acceptor = kwargs.get('acceptor', 532)  ############# TODO: Write documentation
-        self.r0lib = kwargs.get('r0lib', 'lib/R0')  ############# TODO: Write documentation
+        self.donor = kwargs.get('donor', 488)
+        self.acceptor = kwargs.get('acceptor', 532)
+        self.r0lib = kwargs.get('r0lib', 'lib/R0')
         self.z_cutoff = kwargs.get('z_cutoff', 0.05)
         self.r0 = kwargs.pop('r0', 5.4)
         self.dr = 0.05
