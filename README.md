@@ -29,7 +29,7 @@ The software requires Python 3.6+.
 Tutorial
 --------
 
-Jupyter Notebook with simple tutorials on how to use the code: https://github.com/Monte95/FRETpredict/blob/f1736c0f451cbf70d96f876a7ab6f98bbd179fad/tests/data/tutorial_FRETpredict.ipynb
+Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system: https://github.com/Monte95/FRETpredict/blob/e3311a7af03c045000e4ac69928307d7aca0d684/FRETpredict/tutorial_FRETpredict.ipynb
 
 Documentation
 -------------
