@@ -38,6 +38,15 @@ class FRETpredict(Operations):
         residues: list of str
             Placement residue number
 
+        donor: int
+            donor chromophore number
+
+        acceptor: int
+            acceptor chromophore number
+
+        r0lib: str
+            path to chromophore R0 data
+
         z_cutoff: float
             Cutoff value for Boltzmann partition function
 
@@ -73,6 +82,13 @@ class FRETpredict(Operations):
     Methods
     =======
 
+        compute_chromophore_vectors:
+            Calculate chromophores transition dipole moment vector and center-to-center distance distribution for k2
+            calculations.
+
+        calculateR0:
+            Calculate FRET R0 between the donor and acceptor chromophores.
+
         trajectoryAnalysis:
             Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in static, dynamic1, and
             dynamic2 regimes.
@@ -106,6 +122,9 @@ class FRETpredict(Operations):
 
         # Attributes assignments
         self.residues = residues
+        self.donor = kwargs.get('donor', 488)  ############# TODO: Write documentation
+        self.acceptor = kwargs.get('acceptor', 532)  ############# TODO: Write documentation
+        self.r0lib = kwargs.get('r0lib', 'lib/R0')  ############# TODO: Write documentation
         self.z_cutoff = kwargs.get('z_cutoff', 0.05)
         self.r0 = kwargs.pop('r0', 5.4)
         self.dr = 0.05
@@ -140,11 +159,153 @@ class FRETpredict(Operations):
             raise ValueError("The residue_list must contain exactly 2 "
                              "residue numbers: current value {0}.".format(residues))
 
-    # TODO: Create function "Compute transition dipole moment vector"
+    def compute_chromophore_vectors(self, rotamersSite1, rotamersSite2):
 
-    # TODO: Create function "Compute center-to-center chromophore vector"
+        """
 
-    # TODO: Create function to calculate k2, Static, Dynamic1, and Dynamic2 averaging
+        Calculate chromophores transition dipole moment vector and center-to-center distance distribution for k2
+        calculations.
+
+        Parameters
+        ==========
+
+            rotamersSite1: MDA.Universe
+                donor Universe
+
+            rotamersSite2: MDA.Universe
+                acceptor Universe
+
+        Returns
+        =======
+
+            mu_cosine: numpy.array of float
+                μ_si·μ_sj for k2 calculations
+
+            r_mu_1: numpy.array of float
+                R_sij·μ_sj for k2 calculations
+
+            r_mu_2: numpy.array of float
+                R_sij·μ_si for k2 calculations
+
+            rdist: numpy.array of float
+                chromophore distance distribution
+
+        """
+
+        # Select Chromophore atoms for transition dipole vector calculation
+        rotamer1_c1 = rotamersSite1.select_atoms('name ' + self.lib_1.mu[0])
+        rotamer2_c1 = rotamersSite2.select_atoms('name ' + self.lib_2.mu[0])
+        rotamer1_c2 = rotamersSite1.select_atoms('name ' + self.lib_1.mu[1])
+        rotamer2_c2 = rotamersSite2.select_atoms('name ' + self.lib_2.mu[1])
+
+        # Select positions of Chromophore atoms for transition dipole vector
+        c1_rot1_pos = np.array([rotamer1_c1.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
+        c1_rot2_pos = np.array([rotamer2_c1.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
+        c2_rot1_pos = np.array([rotamer1_c2.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
+        c2_rot2_pos = np.array([rotamer2_c2.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
+
+        # Array of Unit vectors for transition dipole of chromophore 1
+        mu_1 = c2_rot1_pos - c1_rot1_pos
+        mu_1 /= np.linalg.norm(mu_1, axis=1, keepdims=True)
+
+        # Array of Unit vectors for transition dipole of chromophore 2
+        mu_2 = c1_rot2_pos - c2_rot2_pos
+        mu_2 /= np.linalg.norm(mu_2, axis=1, keepdims=True)
+
+        # Calculate μ_si·μ_sj for k2 calculations
+        mu_cosine = np.einsum('ik,jk->ij', mu_1, mu_2)
+
+        # Calculation of the vector uniting donor->acceptor centers (R_sij)
+        # Select chromophore centers atoms for each rotamer (specific atoms defined in rotamer library)
+        rotamer1centre = rotamersSite1.select_atoms('name ' + self.lib_1.r[0])
+        rotamer2centre = rotamersSite2.select_atoms('name ' + self.lib_2.r[0])
+
+        # Obtain coordinates of chromophore centers atom for each rotamer
+        centre1_pos = np.array([rotamer1centre.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
+        centre2_pos = np.array([rotamer2centre.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
+
+        # Calculate R_sij vector and unitary R_sij vector
+        rvec = centre1_pos[:, np.newaxis, :] - centre2_pos
+        rdist = np.linalg.norm(rvec, axis=2, keepdims=True)
+        runitvec = rvec / rdist
+
+        # Convert distance in nm
+        rdist = rdist.flatten() / 10
+
+        # Calculate R_sij·μ_sj, and R_sij·μ_si for k2 calculations
+        r_mu_1 = np.einsum('ijk,ik->ij', runitvec, mu_1)
+        r_mu_2 = np.einsum('ijk,jk->ij', runitvec, mu_2)
+
+        # Different method for calculating transition dipole moments:
+        # Mean between C1-C2 vectors
+        # r_12 = c2_rot1_pos[:, np.newaxis, :] - c1_rot2_pos
+        # r_12 /= np.linalg.norm(r_12, axis=2, keepdims=True)
+        # r_21 = c1_rot1_pos[:, np.newaxis, :] - c2_rot2_pos
+        # r_21 /= np.linalg.norm(r_21, axis=2, keepdims=True)
+        # trans_dip_moment12_rot1 = np.einsum('ijk,ik->ij', r_12, mu_1)
+        # trans_dip_moment21_rot1 = np.einsum('ijk,ik->ij', r_21, mu_1)
+        # trans_dip_moment_rot1 = (trans_dip_moment12_rot1 + trans_dip_moment21_rot1) / 2.
+        # trans_dip_moment12_rot2 = np.einsum('ijk,jk->ij', r_12, mu_2)
+        # trans_dip_moment21_rot2 = np.einsum('ijk,jk->ij', r_21, mu_2)
+        # trans_dip_moment_rot2 = (trans_dip_moment12_rot2 + trans_dip_moment21_rot2) / 2.
+
+        return mu_cosine, r_mu_1, r_mu_2, rdist
+
+    def calculateR0(self, k2):
+
+        """
+
+        Calculate FRET R0 between the donor and acceptor chromophores.
+
+        Parameters
+        ==========
+
+            k2: float
+                average orientation factor between two chromophores.
+
+        """
+
+        # Convert donor and acceptor names to Int
+        self.donor = int(self.donor)
+        self.acceptor = int(self.acceptor)
+
+        # Read donor spectrum from file and normalize max value to 1
+        donor_spectrum = pd.read_csv('{}/AlexaFluor{}.csv'.format(self.r0lib, self.donor))
+        donor_spectrum[['Emission', 'Excitation']] = donor_spectrum[['Emission', 'Excitation']] / 100
+
+        # Read acceptor spectrum from file and normalize max value to 1
+        acceptor_spectrum = pd.read_csv('{}/AlexaFluor{}.csv'.format(self.r0lib, self.acceptor))
+        acceptor_spectrum[['Emission', 'Excitation']] = acceptor_spectrum[['Emission', 'Excitation']] / 100
+
+        # Quantum yield and extinction coefficient data for the chromophores
+        chromophore_data = pd.read_csv('{}/Alexa_extinction_QD.csv'.format(self.r0lib), delimiter='\t',
+                                       on_bad_lines='skip', names=['Chromophore', 'Ext_coeff', 'QD'])
+
+        # R0 calculation parameters
+        # Initial factor, for R0 expressed in nm
+        factor = 0.02108
+
+        # 4th-power of the medium refractive index (water)
+        n4 = 1.4 ** 4
+
+        # Quantum yield of the donor in the acceptor absence
+        QD = float(chromophore_data['QD'].loc[chromophore_data['Chromophore'] == self.donor])
+
+        # Extinction coefficient of the acceptor at its peak absorption value (= max value)
+        ext_coeff_max = float(chromophore_data['Ext_coeff'].loc[chromophore_data['Chromophore'] == self.acceptor])
+
+        # Extinction coefficient spectrum of the acceptor
+        ext_coeff_acceptor = (ext_coeff_max * acceptor_spectrum['Excitation']).fillna(0)
+
+        # Integral of the donor emission spectrum
+        donor_spectra_integral = np.trapz(donor_spectrum['Emission'], x=donor_spectrum['Wavelength'])
+
+        # Overlap integral between donor-acceptor (normalized by the donor emission spectrum)
+        J = np.trapz(donor_spectrum['Emission'] * ext_coeff_acceptor * donor_spectrum['Wavelength'] ** 4,
+                     x=donor_spectrum['Wavelength']) / donor_spectra_integral
+
+        # Forster R0 distance between the donor-acceptor pair, in nm
+        self.r0 = factor * np.power(k2 * QD / n4 * J, 1 / 6)
 
     def trajectoryAnalysis(self):
 
@@ -208,65 +369,8 @@ class FRETpredict(Operations):
             if (z1 <= self.z_cutoff) or (z2 <= self.z_cutoff):
                 continue
 
-            # Select Chromophore atoms for transition dipole vector calculation
-            rotamer1_c1 = rotamersSite1.select_atoms('name ' + self.lib_1.mu[0])
-            rotamer2_c1 = rotamersSite2.select_atoms('name ' + self.lib_2.mu[0])
-            rotamer1_c2 = rotamersSite1.select_atoms('name ' + self.lib_1.mu[1])
-            rotamer2_c2 = rotamersSite2.select_atoms('name ' + self.lib_2.mu[1])
-
-            # Select positions of Chromophore atoms for transition dipole vector
-            c1_rot1_pos = np.array([rotamer1_c1.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
-            c1_rot2_pos = np.array([rotamer2_c1.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
-            c2_rot1_pos = np.array([rotamer1_c2.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
-            c2_rot2_pos = np.array([rotamer2_c2.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
-
-            # Array of Unit vectors for transition dipole of chromophore 1
-            mu_1 = c2_rot1_pos - c1_rot1_pos
-            mu_1 /= np.linalg.norm(mu_1, axis=1, keepdims=True)
-
-            # Array of Unit vectors for transition dipole of chromophore 2
-            mu_2 = c1_rot2_pos - c2_rot2_pos
-            mu_2 /= np.linalg.norm(mu_2, axis=1, keepdims=True)
-
-            # Different method for calculating transition dipole moments:
-            # Mean between C1-C2 vectors
-            # r_12 = c2_rot1_pos[:, np.newaxis, :] - c1_rot2_pos
-            # r_12 /= np.linalg.norm(r_12, axis=2, keepdims=True)
-            # r_21 = c1_rot1_pos[:, np.newaxis, :] - c2_rot2_pos
-            # r_21 /= np.linalg.norm(r_21, axis=2, keepdims=True)
-            # trans_dip_moment12_rot1 = np.einsum('ijk,ik->ij', r_12, mu_1)
-            # trans_dip_moment21_rot1 = np.einsum('ijk,ik->ij', r_21, mu_1)
-            # trans_dip_moment_rot1 = (trans_dip_moment12_rot1 + trans_dip_moment21_rot1) / 2.
-            # trans_dip_moment12_rot2 = np.einsum('ijk,jk->ij', r_12, mu_2)
-            # trans_dip_moment21_rot2 = np.einsum('ijk,jk->ij', r_21, mu_2)
-            # trans_dip_moment_rot2 = (trans_dip_moment12_rot2 + trans_dip_moment21_rot2) / 2.
-
-            # Calculate μ_si·μ_sj for k2 calculations
-            mu_cosine = np.einsum('ik,jk->ij', mu_1, mu_2)
-
-            # Calculation of the vector uniting donor->acceptor centers (R_sij)
-            # Select chromophore centers atoms for each rotamer (specific atoms defined in rotamer library)
-            rotamer1centre = rotamersSite1.select_atoms('name ' + self.lib_1.r[0])
-            rotamer2centre = rotamersSite2.select_atoms('name ' + self.lib_2.r[0])
-
-            # Obtain coordinates of chromophore centers atom for each rotamer
-            centre1_pos = np.array([rotamer1centre.positions for x in rotamersSite1.trajectory]).squeeze(axis=1)
-            centre2_pos = np.array([rotamer2centre.positions for x in rotamersSite2.trajectory]).squeeze(axis=1)
-
-            # Calculate R_sij vector and unitary R_sij vector
-            rvec = centre1_pos[:, np.newaxis, :] - centre2_pos
-            rdist = np.linalg.norm(rvec, axis=2, keepdims=True)
-            runitvec = rvec / rdist
-
-            # Convert distance in Ångstrom
-            rdist = rdist.flatten() / 10
-
-            # Calculate (r/r0)^6 factor for FRET efficiency calculations
-            ratio6 = np.power(rdist / self.r0, 6)
-
-            # Calculate R_sij·μ_sj, and R_sij·μ_si for k2 calculations
-            r_mu_1 = np.einsum('ijk,ik->ij', runitvec, mu_1)
-            r_mu_2 = np.einsum('ijk,jk->ij', runitvec, mu_2)
+            # Calculate vector factors for k2 calculations
+            mu_cosine, r_mu_1, r_mu_2, rdist = self.compute_chromophore_vectors(rotamersSite1, rotamersSite2)
 
             # Calculate Orientation factor k2 for each donor-acceptor rotamer combination
             k2 = np.power(mu_cosine - 3 * r_mu_1 * r_mu_2, 2).flatten()
@@ -274,11 +378,17 @@ class FRETpredict(Operations):
             # Create array of k2 values
             allk2 = np.append(allk2, k2.flatten())
 
-            # Orientation factor for dyanmic averaging is weighted by rotamers probability (Boltzmann weights),
+            # Orientation factor for dynamic averaging is weighted by rotamers probability (Boltzmann weights),
             # to account for reduced weight of high energy conformations
 
             # Calculate Average Orientation factor <k2>
             k2_avg[frame_ndx] = np.dot(k2, boltzmann_weights_norm)
+
+            # Calculate R0 for the donor-acceptor pair, based on computed k2
+            self.calculateR0(k2_avg[frame_ndx])
+
+            # Calculate (r/r0)^6 factor for FRET efficiency calculations
+            ratio6 = np.power(rdist / self.r0, 6)
 
             # Calculation of average FRET efficiencies distributions
             # Static Regime
@@ -394,7 +504,7 @@ class FRETpredict(Operations):
         edynamic2 = np.loadtxt(self.output_prefix + '-Ed2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
 
         # k2, Static, Dynamic1, and Dynamic2 averaging
-        # Create DataFrame if only one value of k2 is present
+        # Create DataFrame if only one value of k2 is present (only 1 protein structure/frame provided)
         if k2.size == 1:
 
             df = pd.Series([k2, estatic, edynamic1, edynamic2], index=['k2', 'Estatic', 'Edynamic1', 'Edynamic2'])
@@ -418,7 +528,7 @@ class FRETpredict(Operations):
         Run FRET Efficiency calculations by calling trajectoryAnalysis() and save() functions or by loading
         pre-computed data from file.
 
-        **kwags:
+        **kwargs:
         ========
 
             data_filepath: str
@@ -459,3 +569,4 @@ class FRETpredict(Operations):
 
             # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
             self.save()
+
