@@ -1,5 +1,5 @@
 Cython
-MDAnalysis==1.0
+MDAnalysis==1.1.1
 numpy
 pandas
 matplotlib
