@@ -56,3 +56,4 @@ Contributors
 
 [Daniele Montepietra (@Monte95)](https://github.com/Monte95)
 
+[Kresten Lindorff-Larsen (@lindorff-larsen)](https://github.com/lindorff-larsen)

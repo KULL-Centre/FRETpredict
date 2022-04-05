@@ -52,7 +52,7 @@ setup(
     keywords='',
     packages=find_packages(exclude=['docs', 'tests*']),
     include_package_data=True,
-    author='João M Martins, Micha BA Kunze and Giulio Tesei',
+    author='João M Martins, Micha BA Kunze, Giulio Tesei, Daniele Montepietra and Kresten Lindorff-Larsen',
     install_requires=install_requires,
     depedency_links=dependency_links
 )
