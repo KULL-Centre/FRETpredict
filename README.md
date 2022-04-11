@@ -4,7 +4,7 @@ FRETpredict
 Overview
 --------
 
-A package for predictions of FRET Efficiency from protein strcutures and trajectories, based on the Rotamer Library Approach (RLA).
+A package for predictions of FRET Efficiency from protein structures and trajectories, based on the Rotamer Library Approach (RLA).
 
 Installation
 ------------
