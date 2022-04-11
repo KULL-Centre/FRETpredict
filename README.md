@@ -4,7 +4,7 @@ FRETpredict
 Overview
 --------
 
-A package for predictions of FRET data from conformational ensembles.
+A package for predictions of FRET Efficiency from protein strcutures and trajectories, based on the Rotamer Library Approach (RLA).
 
 Installation
 ------------
