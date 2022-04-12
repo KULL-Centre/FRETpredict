@@ -3,7 +3,6 @@
 import numpy as np
 import pandas as pd
 import itertools
-import re
 
 # Import chromophore data (Type, chromophore name, Extinction coefficient, Quantum yield)
 chromophore_data = pd.read_csv('lib/R0/Dyes_extinction_QD.csv', delimiter=',', on_bad_lines='skip',
@@ -51,7 +50,6 @@ for dye_pair in itertools.product(donors, acceptors):
 
     # <R0> for the donor-acceptor dye pair
     R0_tmp = factor * np.power(k2 * QD/n4 * J, 1/6)
-    # print(R0_tmp)
 
     if R0_tmp != 0.0:
         donor_types.append(donor_type[0])
@@ -63,53 +61,4 @@ for dye_pair in itertools.product(donors, acceptors):
 # Write data to .csv file
 pd.DataFrame({'donor_type': donor_types, 'acceptor_type': acceptor_types, 'donor': donor,
               'acceptor': acceptor, 'R0': R0}).to_csv('lib/R0/R0_pairs.csv', sep='\t', index=False)
-
-
-
-""" """
-
-
-def calculateR0(self, k2):
-    """
-
-    Calculate FRET R0 between the donor and acceptor chromophores.
-
-    Parameters
-    ==========
-
-        k2: float
-            average orientation factor between two chromophores.
-
-    """
-
-    # Import chromophore data (Type, chromophore name, Extinction coefficient, Quantum yield)
-    chromophore_data = pd.read_csv('lib/R0/Dyes_extinction_QD.csv', delimiter=',', on_bad_lines='skip',
-                                   names=['Type', 'Chromophore', 'Ext_coeff', 'QD'])
-
-    # R0 calculation parameters
-    # Initial factor, for R0 expressed in nm
-    factor = 0.02108
-
-    # 4th-power of the medium refractive index (water)
-    n4 = 1.4 ** 4
-
-    # Quantum yield of the donor in the acceptor absence
-    QD = float(chromophore_data['QD'].loc[chromophore_data['Chromophore'] == self.donor])
-
-    # Extinction coefficient of the acceptor at its peak absorption value (= max value)
-    ext_coeff_max = float(chromophore_data['Ext_coeff'].loc[chromophore_data['Chromophore'] == self.acceptor])
-
-    # Extinction coefficient spectrum of the acceptor
-    ext_coeff_acceptor = (ext_coeff_max * acceptor_spectrum['Excitation']).fillna(0)
-
-    # Integral of the donor emission spectrum
-    donor_spectra_integral = np.trapz(donor_spectrum['Emission'], x=donor_spectrum['Wavelength'])
-
-    # Overlap integral between donor-acceptor (normalized by the donor emission spectrum)
-    J = np.trapz(donor_spectrum['Emission'] * ext_coeff_acceptor * donor_spectrum['Wavelength'] ** 4,
-                 x=donor_spectrum['Wavelength']) / donor_spectra_integral
-
-    # Forster R0 distance between the donor-acceptor pair, in nm
-    self.r0 = factor * np.power(k2 * QD / n4 * J, 1 / 6)
-
 
