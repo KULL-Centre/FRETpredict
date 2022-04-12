@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import mdtraj as md
 import matplotlib.pyplot as plt
+import seaborn as sns
 import itertools
 from scipy.signal import find_peaks
 from scipy.cluster.vq import kmeans2
@@ -10,9 +11,67 @@ from scipy.cluster.vq import kmeans2
 
 class RotamerClusters(object):
 
-    # TODO: Write documentation for the class
+    """
 
-    """ """
+    Calculation of a rotamer library starting from a dye+linker trajectory.
+
+    Attributes
+    ==========
+
+        libpath: str
+            Path to folder where dye+linker simulation data is stored.
+
+        path: str
+            Path to folder where rotamer library data will be saved.
+
+        cutoff: list of int
+            List of cluster population used to filter conformations.
+
+        dye: str
+            Name of the dye+linker combination, as written in the DataFrame.
+
+        df: pandas.DataFrame
+            index: dye
+            columns: 'indices' -> indices of the atoms forming the dihedrals
+                     'peaks' -> peak dihedral values
+
+
+    Methods
+    =======
+
+        calcDihe:
+            Calculate dihedral angles on the dye+linker trajectory.
+
+        genPeaks:
+            Compute linker dihedral peaks.
+
+        genClusters:
+            1- Generate combinations of dihedral angles from the peaks (cluster centers C1).
+            2- K-means Clustering
+                - Assign each trajectory frame to the cluster center C1 of least square deviation.
+                - Calculate the average over the dihedral angles that were assigned to the same cluster center.
+                    This results in a set of new centers (C2).
+                - Assign each trajectory frame to the cluster center C2 of least square deviation
+            3- Find the trajectory frame that best represents the cluster center.
+
+        filterCluster:
+            1- Filter the cluster centers C2 based on a cutoff on N (cluster population).
+                This results in a different number of centers (C3).
+            2- Reassign the discarded frames to the remaining C3 cluster center of least square deviation.
+
+        genRotLib:
+            Translate + Rotate C3 cluster centers conformations, and write data to file.
+
+        plotClustHist:
+            Plot Dihedral distribution and peaks with cluster centers C3 dihedrals.
+
+        plotClustPolar:
+            Plot Dihedral distribution and peaks with cluster centers C3 dihedrals on a polar plot.
+
+        run:
+            Run all the calculations to generate a rotamer library from a dye+linker trajectory.
+
+    """
 
     def __init__(self, **kwargs):
 
@@ -20,25 +79,24 @@ class RotamerClusters(object):
         self.path = kwargs.get('path', 'lib/genLIB2/')
         self.cutoff = kwargs.get('cutoff', [50])
         self.dye = 'A48_C1R'
+        self.df = kwargs.get('df', pd.DataFrame({'indices': [], 'peaks': []}).T)
 
-    # TODO: Create function for various linkers atom indices dataframe
+    def calcDihe(self):
 
-    def calcDihe(self, df):
-
-        """ Calculate dihedral angles on the dye+linker trajectory """
+        """ Calculate dihedral angles on the dye+linker trajectory. """
 
         # Load dye+linker trajectory
         t = md.load_xtc(self.libpath + self.dye + '/traj.xtc', self.libpath + self.dye + '/conf_ed.gro')
 
         # Calculate dihedrals from atom indices
-        dihe = md.compute_dihedrals(t, df.loc[self.dye, 'indices'], periodic=True, opt=True) / np.pi * 180
+        dihe = md.compute_dihedrals(t, self.df.loc[self.dye, 'indices'], periodic=True, opt=True) / np.pi * 180
 
         # Save data to text file
         np.savetxt(self.path + 'dihedrals/' + self.dye + '.txt', dihe)
 
-    def genPeaks(self, df):
+    def genPeaks(self):
 
-        """ Compute linker dihedral peaks """
+        """ Compute linker dihedral peaks. """
 
         # Load computed dihedrals from file
         dihe = np.loadtxt(self.path + 'dihedrals/' + self.dye + '.txt')
@@ -72,13 +130,13 @@ class RotamerClusters(object):
             # List of peak dihedral angles
             peaks.append(bins[p])
 
-        # Don't display the plot
+        # Do not display the plot
         plt.close(fig)
 
         # Append peak dihedral angles to the dye+linker dataframe
-        df.loc[self.dye, 'peaks'] = np.array(peaks)
+        self.df.loc[self.dye, 'peaks'] = np.array(peaks)
 
-    def genClusters(self, df):
+    def genClusters(self):
 
         """
 
@@ -99,7 +157,7 @@ class RotamerClusters(object):
 
         # -1-
         # Generate all possible combinations for dihedral angle peaks (cluster centers C1)
-        peaks = np.array(list(itertools.product(*df.loc[self.dye, 'peaks'])))
+        peaks = np.array(list(itertools.product(*self.df.loc[self.dye, 'peaks'])))
 
         # Print number of combinations and number of dihedral angles
         print(f'Peak combinations (C1): {peaks.shape[0]}')
@@ -160,6 +218,12 @@ class RotamerClusters(object):
 
         2- Reassign the discarded frames to the remaining C3 cluster center of least square deviation.
 
+        Parameters
+        ==========
+
+            cutoff: int
+                cluster population used to filter conformations.
+
         """
 
         # Read C2 data from pickle file
@@ -209,7 +273,17 @@ class RotamerClusters(object):
 
     def genRotLib(self, cutoff):
 
-        """ Translate + Rotate C3 cluster centers conformations, and write data to file """
+        """
+
+        Translate + Rotate C3 cluster centers conformations, and write data to file.
+
+        Parameters
+        ==========
+
+            cutoff: int
+                cluster population used to filter conformations.
+
+        """
 
         # Read C3 clusters data
         clusters = pd.read_pickle(self.path + 'clusters_{:s}_{:d}_cutoff.pkl'.format(self.dye, cutoff))
@@ -304,11 +378,144 @@ class RotamerClusters(object):
         # Save cluster populations as weights for FRET Efficiency calculations
         np.savetxt(self.path + '{:s}_cutoff{:d}_weights.txt'.format(self.dye, cutoff), clusters.N.values)
 
-    # TODO: Insert functions to plot cluster data (plotClustHist, plotClustHistCutoffs, plotClustPolar)
+    def plotClustHist(self, dye, cutoff):
 
-    def run(self, df):
+        """
 
-        for dye_name in df.index:
+        Plot Dihedral distribution and peaks with cluster centers C3 dihedrals.
+
+        Parameters
+        ==========
+
+            dye: str
+                Name of the dye+linker combination, as written in the DataFrame.
+
+            cutoff: int
+                cluster population used to filter conformations.
+
+        """
+
+        self.dye = dye
+
+        # Read dihedral data from file
+        dihe = np.loadtxt(self.path + 'dihedrals/' + self.dye + '.txt')
+
+        # Read C3 filtered data from pickle file
+        clusters_cutoff = pd.read_pickle(self.path + 'clusters_{:s}_{:d}_cutoff.pkl'.format(self.dye, cutoff))
+
+        # Plot
+        sns.set_style('darkgrid')
+
+        fig, axes = plt.subplots(3, 3, sharex=True, sharey=True, figsize=(9, 6))
+
+        for i, ax in enumerate(axes.flatten()):
+
+            # Dihedral histogram
+            h, b = np.histogram(dihe[:, i], bins=np.arange(-180, 181, 2), density=True)
+
+            bins = b[:-1] + (b[1] - b[0]) / 2
+
+            # Vertical lines corresponding to the cluster center dihedrals
+            ax.vlines(np.array(clusters_cutoff.dihe.tolist())[:, i], ymin=0, ymax=h.max(), color='r', lw=0.5, ls=':')
+
+            # Vertical lines corresponding to the dihedral peaks
+            ax.vlines(self.df.loc[self.dye, 'peaks'][i], ymin=0, ymax=1, color='k')
+
+            ax.plot(bins, h, lw=2)
+
+            ax.set_ylim(0, h.max() + 0.01)
+
+            ax.set_title(f'$\chi_{i + 1}$')
+
+        # Set labels and titles
+        for i in [0, 2, 3, 5, 6, 8]:
+            axes.flatten()[i].set_ylabel(r'$P(\theta)$')
+
+        for i in [6, 7, 8]:
+            axes.flatten()[i].set_xlabel(r'$\theta$ / deg')
+
+        for i in [2, 5, 8]:
+            axes.flatten()[i].yaxis.set_ticks_position('right')
+            axes.flatten()[i].yaxis.set_label_position("right")
+
+        Nrotamers = len(clusters_cutoff.index)
+
+        fig.suptitle(self.dye.replace('_', ' ') + ' cutoff {:d}, {:d} rotamers'.format(cutoff, Nrotamers))
+
+        plt.savefig(self.path + '/hist_{:s}_{:d}.pdf'.format(self.dye, cutoff))
+
+        plt.tight_layout()
+
+        plt.show()
+
+    def plotClustPolar(self, dye, cutoff):
+
+        """
+
+        Plot Dihedral distribution and peaks with cluster centers C3 dihedrals on a polar plot.
+
+        Parameters
+        ==========
+
+            dye: str
+                Name of the dye+linker combination, as written in the DataFrame.
+
+            cutoff: int
+                cluster population used to filter conformations.
+
+        """
+
+        self.dye = dye
+
+        # Read dihedral data from file
+        dihe = np.loadtxt(self.path + 'dihedrals/' + self.dye + '.txt')
+
+        # Read C3 filtered data from pickle file
+        clusters_cutoff = pd.read_pickle(self.path + 'clusters_{:s}_{:d}_cutoff.pkl'.format(self.dye, cutoff))
+
+        # Plot
+        sns.set_style('darkgrid')
+
+        fig, axes = plt.subplots(3, 3, sharex=False, sharey=False, subplot_kw=dict(polar=True), figsize=(9, 7))
+
+        for i, ax in enumerate(axes.flatten()):
+
+            # Dihedral histogram
+            h, b = np.histogram(dihe[:, i], bins=np.arange(-180, 181, 2), density=True)
+
+            bins = b[:-1] + (b[1] - b[0]) / 2
+
+            # Vertical lines corresponding to dihedral peaks
+            ax.vlines((self.df.loc[self.dye, 'peaks'][i] + 180) / 180 * np.pi, ymin=0, ymax=h.max(), color='k')
+
+            # Vertical lines corresponding to cluster centers C3
+            ax.vlines((np.array(clusters_cutoff.dihe.tolist())[:, i] + 180) / 180 * np.pi, ymin=0, ymax=h.max(),
+                      color='r', lw=0.5, ls=':')
+
+            # Plot dihedral distribution in polar graph
+            ax.plot((bins + 180) / 180 * np.pi, h, lw=2)
+
+            # Plot settings
+            ax.set_xticks(np.arange(0, 2 * np.pi, np.pi / 2))
+            ax.set_title(f'$\chi_{i + 1}$')
+            ax.set_yticks([])
+            ax.grid(False)
+
+        Nrotamers = len(clusters_cutoff.index)
+
+        fig.suptitle(self.dye.replace('_', ' ') + ' cutoff {:d}, {:d} rotamers'.format(cutoff, Nrotamers))
+
+        fig.tight_layout()
+
+        fig.savefig(self.path + '/{:s}_{:d}.pdf'.format(self.dye, cutoff))
+
+        plt.show()
+
+    def run(self):
+
+        """ Run all the calculations to generate a rotamer library from a dye+linker trajectory. """
+
+        for dye_name in self.df.index:
 
             # Display dye+linker under analysis
             self.dye = dye_name
@@ -316,15 +523,15 @@ class RotamerClusters(object):
 
             # Calculate dihedral angles for all the chromophore+linkers
             print("\nCalculating dihedral angles...")
-            self.calcDihe(df)
+            self.calcDihe()
 
             # Compute dihedral distributions and peaks
             print("\nComputing dihedral distributions and peaks...")
-            self.genPeaks(df)
+            self.genPeaks()
 
             # Generate C2 cluster centers
             print("\nGenerating cluster centers...")
-            self.genClusters(df)
+            self.genClusters()
 
             # Filter C2 cluster centers for population, generate cluster centers C3,
             # save generated rotamer libraries.
