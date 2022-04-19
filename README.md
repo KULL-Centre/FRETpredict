@@ -57,7 +57,8 @@ FRET = FRETpredict(protein=u, residues=[res1, res2], temperature=293, chains=[ch
                    libname_2='Alexa {} cutoff{:d}'.format(chromophore_2, cutoff), 
                    output_prefix='prova/E{:d}_{}_{}'.format(cutoff, sigma, epsilon))
 
-# Run FRET efficiency calculations, for every combination of the donor-acceptor rotamers placed on the residue pair on a single protein structure
+# Run FRET efficiency calculations, for every combination of the donor-acceptor rotamers placed on the residue pair 
+# on a single protein structure
 FRET.run()
 
 ```
