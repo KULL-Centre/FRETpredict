@@ -50,7 +50,8 @@ u = MDAnalysis.Universe('test_systems/Hsp90/openHsp90.pdb')
 cutoff = 10
 
 # Create instance of the FRETpredict class
-FRET = FRETpredict(protein=u, residues=[res1, res2], temperature=293, chains=[chain_res1, chain_res2], 
+FRET = FRETpredict(protein=u, residues=[res1, res2], temperature=293, 
+                   chains=[chain_res1, chain_res2], 
                    donor=chromophore_1, acceptor=chromophore_2, 
                    sigma_scaling=1.0, epsilon_scaling=1.0, electrostatic=True,
                    libname_1='Alexa {} cutoff{:d}'.format(chromophore_1, cutoff),
