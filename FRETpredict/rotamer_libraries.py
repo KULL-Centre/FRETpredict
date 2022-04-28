@@ -103,7 +103,7 @@ class RotamerClusters(object):
 
         peaks = []
 
-        fig, axes = plt.subplots(3, 3, figsize=(50, 20), sharex=True, sharey=True)
+        fig, axes = plt.subplots(np.shape(dihe)[1], figsize=(50, 20), sharex=True, sharey=True)
 
         # Iterate for every subplot (= dihedral angle)
         for i, ax in enumerate(axes.flatten()):
@@ -153,11 +153,11 @@ class RotamerClusters(object):
         """
 
         # Load dihedral data from file
-        dihedrals = np.loadtxt(self.path + 'dihedrals/' + self.dye + '.txt')
+        dihedrals = np.loadtxt(self.path + 'dihedrals/' + self.dye + '.txt').astype(np.float16)
 
         # -1-
         # Generate all possible combinations for dihedral angle peaks (cluster centers C1)
-        peaks = np.array(list(itertools.product(*self.df.loc[self.dye, 'peaks'])))
+        peaks = np.array(list(itertools.product(*self.df.loc[self.dye, 'peaks']))).astype(np.float16)
 
         # Print number of combinations and number of dihedral angles
         print(f'Peak combinations (C1): {peaks.shape[0]}')
@@ -169,7 +169,7 @@ class RotamerClusters(object):
         # k-means clustering, using peaks as the initial number of clusters, assigns every
         # trajectory frame to a centroid.
         # labels.shape = (num_frames, 1)
-        centroids, labels = kmeans2(dihedrals, peaks, minit='matrix')
+        centroids, labels = kmeans2(dihedrals.astype(float), peaks.astype(float), minit='matrix')
 
         # Number of cluster centers C2
         print(f'C2 Cluster centers: {len(np.unique(labels))}')
@@ -399,6 +399,7 @@ class RotamerClusters(object):
 
         # Read dihedral data from file
         dihe = np.loadtxt(self.path + 'dihedrals/' + self.dye + '.txt')
+        num_dihedrals = np.shape(dihe)[1]
 
         # Read C3 filtered data from pickle file
         clusters_cutoff = pd.read_pickle(self.path + 'clusters_{:s}_{:d}_cutoff.pkl'.format(self.dye, cutoff))
@@ -406,9 +407,14 @@ class RotamerClusters(object):
         # Plot
         sns.set_style('darkgrid')
 
-        fig, axes = plt.subplots(3, 3, sharex=True, sharey=True, figsize=(9, 6))
+        fig, axes = plt.subplots(np.round(num_dihedrals/3).astype(int), num_dihedrals % 3 + 1,
+                                 sharex=True, sharey=True, figsize=(9, 6))
 
         for i, ax in enumerate(axes.flatten()):
+
+            if i == num_dihedrals:
+                ax.set_visible(False)
+                continue
 
             # Dihedral histogram
             h, b = np.histogram(dihe[:, i], bins=np.arange(-180, 181, 2), density=True)
@@ -425,7 +431,7 @@ class RotamerClusters(object):
 
             ax.set_ylim(0, h.max() + 0.01)
 
-            ax.set_title(f'$\chi_{i + 1}$')
+            ax.set_title("$\chi_" + '{' + f'{i+1}' +'}$')
 
         # Set labels and titles
         for i in [0, 2, 3, 5, 6, 8]:
@@ -469,6 +475,7 @@ class RotamerClusters(object):
 
         # Read dihedral data from file
         dihe = np.loadtxt(self.path + 'dihedrals/' + self.dye + '.txt')
+        num_dihedrals = np.shape(dihe)[1]
 
         # Read C3 filtered data from pickle file
         clusters_cutoff = pd.read_pickle(self.path + 'clusters_{:s}_{:d}_cutoff.pkl'.format(self.dye, cutoff))
@@ -476,9 +483,14 @@ class RotamerClusters(object):
         # Plot
         sns.set_style('darkgrid')
 
-        fig, axes = plt.subplots(3, 3, sharex=False, sharey=False, subplot_kw=dict(polar=True), figsize=(9, 7))
+        fig, axes = plt.subplots(np.round(num_dihedrals/3).astype(int), num_dihedrals % 3 + 1,
+                                 sharex=False, sharey=False, subplot_kw=dict(polar=True), figsize=(9, 7))
 
         for i, ax in enumerate(axes.flatten()):
+
+            if i == num_dihedrals:
+                ax.set_visible(False)
+                continue
 
             # Dihedral histogram
             h, b = np.histogram(dihe[:, i], bins=np.arange(-180, 181, 2), density=True)
@@ -497,7 +509,7 @@ class RotamerClusters(object):
 
             # Plot settings
             ax.set_xticks(np.arange(0, 2 * np.pi, np.pi / 2))
-            ax.set_title(f'$\chi_{i + 1}$')
+            ax.set_title("$\chi_" + '{' + f'{i+1}' +'}$')
             ax.set_yticks([])
             ax.grid(False)
 
@@ -543,6 +555,6 @@ class RotamerClusters(object):
                 print("\nGenerating rotamer library...")
                 self.genRotLib(co)
 
-            print('Done.')
+            print('Done.\n')
 
 
