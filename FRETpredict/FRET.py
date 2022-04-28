@@ -80,6 +80,7 @@ class FRETpredict(Operations):
             Boltzmann factors distribution
 
         stdev: float
+            Standard deviation
 
     Methods
     =======
@@ -132,7 +133,7 @@ class FRETpredict(Operations):
         self.r0 = kwargs.pop('r0', 5.4)
         self.dr = 0.05
         self.rmin = -5
-        self.rmax = kwargs.get('rmax', 12) * 2 - self.rmin
+        self.rmax = kwargs.get('rmax', 20) * 2 - self.rmin
         self.nr = int(round((self.rmax - self.rmin) / self.dr, 0) + 1)
         self.rax = np.linspace(self.rmin, self.rmax, self.nr)
         self.output_prefix = kwargs.get('output_prefix', 'res')
@@ -152,7 +153,7 @@ class FRETpredict(Operations):
             if type(self.chains[i]) == str:
                 residue_sel += " and segid {:s}".format(self.chains[i])
 
-            # Loggin information on the selected residues
+            # Logging information on the selected residues
             logging.info('{:s} = {:s}'.format(residue_sel, self.protein.select_atoms(residue_sel).atoms.resnames[0]))
 
         # Raise error if the specified placement residues are different than two
@@ -324,7 +325,7 @@ class FRETpredict(Operations):
         # Create H5PY file
         f = h5py.File(self.output_prefix + '-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "w")
 
-        # Initialize a H5PY dataset (~ numpy.array) named "distribution", with shape = (n_frames, rax.size))
+        # Initialize a H5PY dataset named "distributions", with shape = (n_frames, rax.size))
         distributions = f.create_dataset("distributions", (self.protein.trajectory.n_frames, self.rax.size),
                                          fillvalue=0, compression="gzip")
 
@@ -348,6 +349,8 @@ class FRETpredict(Operations):
 
         for frame_ndx, _ in enumerate(self.protein.trajectory):
 
+            print(f'\nFrame {frame_ndx + 1}/{len(self.protein.trajectory)}')
+
             # Fit the rotamers onto the protein
             # Each protein structure (i.e. trajectory frame) has m conformations for chromophore 1 and l conformations
             # for chromophore 2
@@ -370,7 +373,7 @@ class FRETpredict(Operations):
             # Compare Boltzmann partition function with cutoff
             if (z1 <= self.z_cutoff) or (z2 <= self.z_cutoff):
                 # Warning for Z < Z_cutoff
-                print('Z < Z_cutoff')
+                print('\nZ < Z_cutoff')
 
                 # If Z value < cutoff then create an empty array for k2 values with same dimension as Z array, to save
                 allk2 = np.zeros_like(allZ, dtype=float)
@@ -398,6 +401,12 @@ class FRETpredict(Operations):
 
                 self.calculateR0(k2_avg[frame_ndx])
 
+                # If dyes pair has no spectral overlap, skip iteration
+                if self.r0 == 0:
+
+                    print('\nDyes pair R0 = 0!')
+                    continue
+
             # Calculate (r/r0)^6 factor for FRET efficiency calculations
             ratio6 = np.power(rdist / self.r0, 6)
 
@@ -414,7 +423,7 @@ class FRETpredict(Operations):
             A_avg = np.dot(3. / 2. * k2 / ratio6, boltzmann_weights_norm)
             edyn2_avg[frame_ndx] = A_avg / (A_avg + 1)
 
-            # Calculate normalized rdist
+            # Calculate normalized rdist between 0 and 1
             rdist = np.round((self.nr * (rdist - self.rmin)) / (self.rmax - self.rmin)).astype(int).flatten()
 
             # Calculate weighted distribution of center-to-center distances between the two chromophores
@@ -579,3 +588,5 @@ class FRETpredict(Operations):
 
             # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
             self.save()
+
+            print('\nDone.')
