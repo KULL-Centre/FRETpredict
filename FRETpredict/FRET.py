@@ -280,7 +280,7 @@ class FRETpredict(Operations):
                                        names=['Type', 'Chromophore', 'Ext_coeff', 'QD'])
 
         # Extract donor and acceptor numbers from string
-        temp = re.compile("([a-zA-Z]+)([0-9-a-zA-Z]+)")
+        temp = re.compile("([a-zA-Z]+) ([0-9-a-zA-Z]+)")
         donor_number = temp.match(self.donor).groups()[1]
         acceptor_number = temp.match(self.acceptor).groups()[1]
 
