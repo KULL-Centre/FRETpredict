@@ -54,7 +54,7 @@ Tutorial
 
 - __[Tutorial_FRETpredict_Hsp90](https://github.com/Monte95/FRETpredict/blob/e3311a7af03c045000e4ac69928307d7aca0d684/FRETpredict/tutorial_FRETpredict.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system.
 
-- __[Generate new rotamer libraries]()__ : Jupyter Notebook tutorial on how to create and add new rotamer libraries.
+- __[Generate new rotamer libraries]()__ : Jupyter Notebook on how to create and add new rotamer libraries.
 
 Testing
 -------
