@@ -52,7 +52,9 @@ FRET.run()
 Tutorial
 --------
 
-Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system: https://github.com/Monte95/FRETpredict/blob/e3311a7af03c045000e4ac69928307d7aca0d684/FRETpredict/tutorial_FRETpredict.ipynb
+Jupyter Notebook with simple __[tutorials](https://github.com/Monte95/FRETpredict/blob/e3311a7af03c045000e4ac69928307d7aca0d684/FRETpredict/tutorial_FRETpredict.ipynb)__ on how to use the code on the Hsp90 system.
+
+Jupyter Notebook __[tutorial]()__ on how to create and add new rotamer libraries.
 
 Documentation
 -------------
