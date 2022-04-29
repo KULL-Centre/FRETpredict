@@ -52,12 +52,9 @@ FRET.run()
 Tutorial
 --------
 
-Jupyter Notebook with simple __[tutorials](https://github.com/Monte95/FRETpredict/blob/e3311a7af03c045000e4ac69928307d7aca0d684/FRETpredict/tutorial_FRETpredict.ipynb)__ on how to use the code on the Hsp90 system.
+- __[Tutorial_FRETpredict_Hsp90](https://github.com/Monte95/FRETpredict/blob/e3311a7af03c045000e4ac69928307d7aca0d684/FRETpredict/tutorial_FRETpredict.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system.
 
-Jupyter Notebook __[tutorial]()__ on how to create and add new rotamer libraries.
-
-Documentation
--------------
+- __[Generate new rotamer libraries]()__ : Jupyter Notebook tutorial on how to create and add new rotamer libraries.
 
 Testing
 -------
@@ -68,17 +65,18 @@ Testing
 
   python -m pytest
 ```
+
 Contributors
 -------------
 
 [João M Martins (@joaommartins)](https://github.com/joaommartins)
+
+[Daniele Montepietra (@Monte95)](https://github.com/Monte95)
 
 [Micha BA Kunze (@mbakunze)](https://github.com/mbakunze)
 
 [Ramon Crehuet (@rcrehuet)](https://github.com/rcrehuet)
 
 [Giulio Tesei (@gitesei)](https://github.com/gitesei)
-
-[Daniele Montepietra (@Monte95)](https://github.com/Monte95)
 
 [Kresten Lindorff-Larsen (@lindorff-larsen)](https://github.com/lindorff-larsen)
