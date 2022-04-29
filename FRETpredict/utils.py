@@ -4,11 +4,6 @@ from MDAnalysis.coordinates.memory import MemoryReader
 from lennardjones import lj_parameters
 import libraries
 
-# import os
-# import logging
-# import scipy.special as special
-# from scipy.spatial.distance import cdist
-
 
 class Operations(object):
 
@@ -23,13 +18,13 @@ class Operations(object):
                 Protein MDAnalysis Universe object
 
             libname_1 : str
-                Name of first chromophore
+                Name of the donor rotamer library
 
             lib_1 : dict
                 Rotamer library of the first chromophore
 
             libname_2 : str
-                Name of second chromophore
+                Name of the acceptor rotamer library
 
             lib_2 : dict
                 Rotamer library of the second chromophore
@@ -199,11 +194,19 @@ class Operations(object):
         rmin_ij = np.add.outer(rmin_rotamer, rmin_protein)
         LJ_data = [proteinNotSite.indices, rotamerSel_LJ.indices, eps_ij, rmin_ij]
 
-        # Charges for Debye-Huckel calculations (only if electrostatic calculations are enabled)
+        # Charges for Debye-Huckel calculations (if electrostatic calculations are enabled)
         if self.electrostatic:
-            # Chromophore charged atoms selections
-            rot_positive = rotamerSel_LJ.select_atoms('name ' + ' or name '.join(lib.positive))
-            rot_negative = rotamerSel_LJ.select_atoms('name ' + ' or name '.join(lib.negative))
+
+            # Chromophore charged atoms selections (if present)
+            try:
+                rot_positive = rotamerSel_LJ.select_atoms('name ' + ' or name '.join(lib.positive))
+            except:
+                rot_positive = []
+
+            try:
+                rot_negative = rotamerSel_LJ.select_atoms('name ' + ' or name '.join(lib.negative))
+            except:
+                rot_negative = []
 
             # Charge assignment
             charge = lambda x: -1 if x in rot_negative else 0.5 if x in rot_positive else 0
