@@ -188,7 +188,7 @@ ATTO Thio12 C3R:
   - N3 and resname Tth
   r:
   - C9 and resname Tth
-Alexa 350 C1R:
+AlexaFluor 350 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A35_C1R_cutoff30
@@ -202,7 +202,7 @@ Alexa 350 C1R:
   - N1 and resname A35
   r:
   - C5 and resname A35
-Alexa 350 L1R:
+AlexaFluor 350 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A35_L1R_cutoff30
@@ -216,7 +216,7 @@ Alexa 350 L1R:
   - N1 and resname A35
   r:
   - C5 and resname A35
-Alexa 488:
+AlexaFluor 488:
   author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A48_C1R_cutoff30
@@ -233,7 +233,7 @@ Alexa 488:
   - N2 and resname A48
   r:
   - C7 and resname A48
-Alexa 488 B1R:
+AlexaFluor 488 B1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A48_B1R_cutoff30
@@ -250,7 +250,7 @@ Alexa 488 B1R:
   - N2 and resname A48
   r:
   - C7 and resname A48
-Alexa 488 C1R:
+AlexaFluor 488 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A48_C1R_cutoff30
@@ -267,7 +267,7 @@ Alexa 488 C1R:
   - N2 and resname A48
   r:
   - C7 and resname A48
-Alexa 488 L1R:
+AlexaFluor 488 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A48_L1R_cutoff30
@@ -284,7 +284,7 @@ Alexa 488 L1R:
   - N2 and resname A48
   r:
   - C7 and resname A48
-Alexa 532:
+AlexaFluor 532:
   author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A53_C1R_cutoff30
@@ -300,7 +300,7 @@ Alexa 532:
   - N2 and resname A53
   r:
   - C7 and resname A53
-Alexa 532 C1R:
+AlexaFluor 532 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A53_C1R_cutoff30
@@ -316,7 +316,7 @@ Alexa 532 C1R:
   - N2 and resname A53
   r:
   - C7 and resname A53
-Alexa 532 L1R:
+AlexaFluor 532 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A53_L1R_cutoff30
@@ -332,7 +332,7 @@ Alexa 532 L1R:
   - N2 and resname A53
   r:
   - C7 and resname A53
-Alexa 568:
+AlexaFluor 568:
   author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A56_C1R_cutoff30
@@ -349,7 +349,7 @@ Alexa 568:
   - N2 and resname A56
   r:
   - C10 and resname A56
-Alexa 568 C1R:
+AlexaFluor 568 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A56_C1R_cutoff30
@@ -366,7 +366,7 @@ Alexa 568 C1R:
   - N2 and resname A56
   r:
   - C10 and resname A56
-Alexa 568 L1R:
+AlexaFluor 568 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A56_L1R_cutoff30
@@ -383,7 +383,7 @@ Alexa 568 L1R:
   - N2 and resname A56
   r:
   - C10 and resname A56
-Alexa 594:
+AlexaFluor 594:
   author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A59_C1R_cutoff30
@@ -400,7 +400,7 @@ Alexa 594:
   - N2 and resname A59
   r:
   - C10 and resname A59
-Alexa 594 C1R:
+AlexaFluor 594 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A59_C1R_cutoff30
@@ -417,7 +417,7 @@ Alexa 594 C1R:
   - N2 and resname A59
   r:
   - C10 and resname A59
-Alexa 594 L1R:
+AlexaFluor 594 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A59_L1R_cutoff30
@@ -434,7 +434,7 @@ Alexa 594 L1R:
   - N2 and resname A59
   r:
   - C10 and resname A59
-Alexa 647:
+AlexaFluor 647:
   author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A64_C2R_cutoff30
@@ -452,7 +452,7 @@ Alexa 647:
   - N2 and resname A64
   r:
   - C29 and resname A64
-Alexa 647 C2R:
+AlexaFluor 647 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A64_C2R_cutoff30
@@ -470,7 +470,7 @@ Alexa 647 C2R:
   - N2 and resname A64
   r:
   - C29 and resname A64
-Alexa 647 L1R:
+AlexaFluor 647 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
   filename: A64_L1R_cutoff30
