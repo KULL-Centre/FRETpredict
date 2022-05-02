@@ -69,9 +69,9 @@ Testing
 Contributors
 -------------
 
-[João M Martins (@joaommartins)](https://github.com/joaommartins)
-
 [Daniele Montepietra (@Monte95)](https://github.com/Monte95)
+
+[João M Martins (@joaommartins)](https://github.com/joaommartins)
 
 [Micha BA Kunze (@mbakunze)](https://github.com/mbakunze)
 
