@@ -2,6 +2,8 @@ Cython
 MDAnalysis==1.1.1
 numpy
 pandas
+seaborn
+mdtraj
 matplotlib
 scipy
 h5py

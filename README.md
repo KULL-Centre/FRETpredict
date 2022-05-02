@@ -4,7 +4,7 @@ FRETpredict
 Overview
 --------
 
-A package for predictions of FRET data from conformational ensembles.
+A package for FRET Efficiency prediction of protein structures and trajectories, based on the Rotamer Library Approach (RLA).
 
 Installation
 ------------
@@ -26,13 +26,35 @@ or clone the repo:
 
 The software requires Python 3.6+.
 
+Code Example
+------------
+
+```python
+
+import MDAnalysis
+from FRET import FRETpredict
+
+# Create a MDAnalysis.Universe object for the protein structure.
+u = MDAnalysis.Universe('test_systems/Hsp90/openHsp90.pdb')
+
+# Create instance of the FRETpredict class
+FRET = FRETpredict(protein=u, residues=[452, 637], chains=['A', 'B'], temperature=293, 
+                   fixed_R0=True, r0=6.3, electrostatic=True,
+                   libname_1='AlexaFluor 594 C1R cutoff10',
+                   libname_2='AlexaFluor 568 C1R cutoff10', 
+                   output_prefix='test/E10_594_568')
+
+# Run FRET efficiency calculations.
+FRET.run()
+
+```
+
 Tutorial
 --------
 
-Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system: https://github.com/Monte95/FRETpredict/blob/e3311a7af03c045000e4ac69928307d7aca0d684/FRETpredict/tutorial_FRETpredict.ipynb
+- __[Tutorial_FRETpredict_Hsp90](https://github.com/Monte95/FRETpredict/blob/e3311a7af03c045000e4ac69928307d7aca0d684/FRETpredict/tutorial_FRETpredict.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system.
 
-Documentation
--------------
+- __[Generate new rotamer libraries](https://github.com/Monte95/FRETpredict/blob/00595bed3e52d628f34ffedd57a4b200be524872/FRETpredict/Tutorial_generate_new_rotamer_libraries.ipynb)__ : Jupyter Notebook on how to create and add new rotamer libraries.
 
 Testing
 -------
@@ -43,8 +65,11 @@ Testing
 
   python -m pytest
 ```
+
 Contributors
 -------------
+
+[Daniele Montepietra (@Monte95)](https://github.com/Monte95)
 
 [João M Martins (@joaommartins)](https://github.com/joaommartins)
 
@@ -53,7 +78,5 @@ Contributors
 [Ramon Crehuet (@rcrehuet)](https://github.com/rcrehuet)
 
 [Giulio Tesei (@gitesei)](https://github.com/gitesei)
-
-[Daniele Montepietra (@Monte95)](https://github.com/Monte95)
 
 [Kresten Lindorff-Larsen (@lindorff-larsen)](https://github.com/lindorff-larsen)

@@ -14,14 +14,13 @@ import pandas as pd
 import h5py
 import logging
 import MDAnalysis
-import math
+import re
 
 # Inner imports
 from utils import Operations
 
 
 class FRETpredict(Operations):
-
     """
 
     Calculation of FRET signal between two chromophores.
@@ -48,7 +47,10 @@ class FRETpredict(Operations):
             path to chromophore R0 data
 
         z_cutoff: float
-            Cutoff value for Boltzmann partition function
+            Cutoff value for Boltzmann partition function, corresponding to the threshold for states population.
+
+        fixed_R0: bool
+            Decide if performing analytical R0 calculation or provide fixed value through the r0 attribute.
 
         r0 = float
             Forster distance for the chromophores pair
@@ -78,6 +80,7 @@ class FRETpredict(Operations):
             Boltzmann factors distribution
 
         stdev: float
+            Standard deviation
 
     Methods
     =======
@@ -126,10 +129,11 @@ class FRETpredict(Operations):
         self.acceptor = kwargs.get('acceptor', 532)
         self.r0lib = kwargs.get('r0lib', 'lib/R0')
         self.z_cutoff = kwargs.get('z_cutoff', 0.05)
+        self.fixed_R0 = kwargs.get('fixed_R0', False)
         self.r0 = kwargs.pop('r0', 5.4)
         self.dr = 0.05
         self.rmin = -5
-        self.rmax = kwargs.get('rmax', 12) * 2 - self.rmin
+        self.rmax = kwargs.get('rmax', 20) * 2 - self.rmin
         self.nr = int(round((self.rmax - self.rmin) / self.dr, 0) + 1)
         self.rax = np.linspace(self.rmin, self.rmax, self.nr)
         self.output_prefix = kwargs.get('output_prefix', 'res')
@@ -147,15 +151,13 @@ class FRETpredict(Operations):
 
             # If chains are specified, add them to the atom selection
             if type(self.chains[i]) == str:
-
                 residue_sel += " and segid {:s}".format(self.chains[i])
 
-            # Loggin information on the selected residues
+            # Logging information on the selected residues
             logging.info('{:s} = {:s}'.format(residue_sel, self.protein.select_atoms(residue_sel).atoms.resnames[0]))
 
         # Raise error if the specified placement residues are different than two
         if len(residues) != 2:
-
             raise ValueError("The residue_list must contain exactly 2 "
                              "residue numbers: current value {0}.".format(residues))
 
@@ -265,21 +267,22 @@ class FRETpredict(Operations):
 
         """
 
-        # Convert donor and acceptor names to Int
-        self.donor = int(self.donor)
-        self.acceptor = int(self.acceptor)
-
         # Read donor spectrum from file and normalize max value to 1
-        donor_spectrum = pd.read_csv('{}/AlexaFluor{}.csv'.format(self.r0lib, self.donor))
+        donor_spectrum = pd.read_csv('{}/{}.csv'.format(self.r0lib, self.donor))
         donor_spectrum[['Emission', 'Excitation']] = donor_spectrum[['Emission', 'Excitation']] / 100
 
         # Read acceptor spectrum from file and normalize max value to 1
-        acceptor_spectrum = pd.read_csv('{}/AlexaFluor{}.csv'.format(self.r0lib, self.acceptor))
+        acceptor_spectrum = pd.read_csv('{}/{}.csv'.format(self.r0lib, self.acceptor))
         acceptor_spectrum[['Emission', 'Excitation']] = acceptor_spectrum[['Emission', 'Excitation']] / 100
 
         # Quantum yield and extinction coefficient data for the chromophores
-        chromophore_data = pd.read_csv('{}/Alexa_extinction_QD.csv'.format(self.r0lib), delimiter='\t',
-                                       on_bad_lines='skip', names=['Chromophore', 'Ext_coeff', 'QD'])
+        chromophore_data = pd.read_csv('lib/R0/Dyes_extinction_QD.csv', delimiter=',', on_bad_lines='skip',
+                                       names=['Type', 'Chromophore', 'Ext_coeff', 'QD'])
+
+        # Extract donor and acceptor numbers from string
+        temp = re.compile("([a-zA-Z]+) ([0-9-a-zA-Z]+)")
+        donor_number = temp.match(self.donor).groups()[1]
+        acceptor_number = temp.match(self.acceptor).groups()[1]
 
         # R0 calculation parameters
         # Initial factor, for R0 expressed in nm
@@ -289,10 +292,10 @@ class FRETpredict(Operations):
         n4 = 1.4 ** 4
 
         # Quantum yield of the donor in the acceptor absence
-        QD = float(chromophore_data['QD'].loc[chromophore_data['Chromophore'] == self.donor])
+        QD = float(chromophore_data['QD'].loc[chromophore_data['Chromophore'] == donor_number])
 
         # Extinction coefficient of the acceptor at its peak absorption value (= max value)
-        ext_coeff_max = float(chromophore_data['Ext_coeff'].loc[chromophore_data['Chromophore'] == self.acceptor])
+        ext_coeff_max = float(chromophore_data['Ext_coeff'].loc[chromophore_data['Chromophore'] == acceptor_number])
 
         # Extinction coefficient spectrum of the acceptor
         ext_coeff_acceptor = (ext_coeff_max * acceptor_spectrum['Excitation']).fillna(0)
@@ -322,7 +325,7 @@ class FRETpredict(Operations):
         # Create H5PY file
         f = h5py.File(self.output_prefix + '-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "w")
 
-        # Initialize a H5PY dataset (~ numpy.array) named "distribution", with shape = (n_frames, rax.size))
+        # Initialize a H5PY dataset named "distributions", with shape = (n_frames, rax.size))
         distributions = f.create_dataset("distributions", (self.protein.trajectory.n_frames, self.rax.size),
                                          fillvalue=0, compression="gzip")
 
@@ -346,6 +349,8 @@ class FRETpredict(Operations):
 
         for frame_ndx, _ in enumerate(self.protein.trajectory):
 
+            print(f'\nFrame {frame_ndx + 1}/{len(self.protein.trajectory)}')
+
             # Fit the rotamers onto the protein
             # Each protein structure (i.e. trajectory frame) has m conformations for chromophore 1 and l conformations
             # for chromophore 2
@@ -367,6 +372,8 @@ class FRETpredict(Operations):
 
             # Compare Boltzmann partition function with cutoff
             if (z1 <= self.z_cutoff) or (z2 <= self.z_cutoff):
+                # Warning for Z < Z_cutoff
+                print('\nZ < Z_cutoff')
 
                 # If Z value < cutoff then create an empty array for k2 values with same dimension as Z array, to save
                 allk2 = np.zeros_like(allZ, dtype=float)
@@ -389,8 +396,16 @@ class FRETpredict(Operations):
             # Calculate Average Orientation factor <k2>
             k2_avg[frame_ndx] = np.dot(k2, boltzmann_weights_norm)
 
-            # Calculate R0 for the donor-acceptor pair, based on computed k2
-            self.calculateR0(k2_avg[frame_ndx])
+            # Calculate R0 for the donor-acceptor pair, based on computed k2, if R0 calculations are enabled
+            if self.fixed_R0 == False:
+
+                self.calculateR0(k2_avg[frame_ndx])
+
+                # If dyes pair has no spectral overlap, skip iteration
+                if self.r0 == 0:
+
+                    print('\nDyes pair R0 = 0!')
+                    continue
 
             # Calculate (r/r0)^6 factor for FRET efficiency calculations
             ratio6 = np.power(rdist / self.r0, 6)
@@ -408,7 +423,7 @@ class FRETpredict(Operations):
             A_avg = np.dot(3. / 2. * k2 / ratio6, boltzmann_weights_norm)
             edyn2_avg[frame_ndx] = A_avg / (A_avg + 1)
 
-            # Calculate normalized rdist
+            # Calculate normalized rdist between 0 and 1
             rdist = np.round((self.nr * (rdist - self.rmin)) / (self.rmax - self.rmin)).astype(int).flatten()
 
             # Calculate weighted distribution of center-to-center distances between the two chromophores
@@ -458,7 +473,6 @@ class FRETpredict(Operations):
 
             # Check if every k2 instance is associated with one weight
             if self.weights.size != k2.size:
-
                 # Warning log
                 logging.info('Weights array has size {} whereas the number of frames is {}'.
                              format(self.weights.size, k2.size))
@@ -575,3 +589,4 @@ class FRETpredict(Operations):
             # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
             self.save()
 
+            print('\nDone.')
