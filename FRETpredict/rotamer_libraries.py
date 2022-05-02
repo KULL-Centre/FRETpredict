@@ -407,7 +407,7 @@ class RotamerClusters(object):
         # Plot
         sns.set_style('darkgrid')
 
-        fig, axes = plt.subplots(np.round(num_dihedrals/3).astype(int), num_dihedrals % 3 + 1,
+        fig, axes = plt.subplots(nrows=np.round(num_dihedrals/3).astype(int), ncols=3,
                                  sharex=True, sharey=True, figsize=(9, 6))
 
         for i, ax in enumerate(axes.flatten()):
@@ -434,19 +434,18 @@ class RotamerClusters(object):
             ax.set_title("$\chi_" + '{' + f'{i+1}' +'}$')
 
         # Set labels and titles
-        for i in [0, 2, 3, 5, 6, 8]:
+        for i in list(range(2, num_dihedrals, 3)) + list(range(0, num_dihedrals, 3)):
             axes.flatten()[i].set_ylabel(r'$P(\theta)$')
 
-        for i in [6, 7, 8]:
+        for i in range(0, num_dihedrals):
             axes.flatten()[i].set_xlabel(r'$\theta$ / deg')
 
-        for i in [2, 5, 8]:
+        for i in range(2, num_dihedrals, 3):
             axes.flatten()[i].yaxis.set_ticks_position('right')
             axes.flatten()[i].yaxis.set_label_position("right")
 
-        Nrotamers = len(clusters_cutoff.index)
-
-        fig.suptitle(self.dye.replace('_', ' ') + ' cutoff {:d}, {:d} rotamers'.format(cutoff, Nrotamers))
+        fig.suptitle(self.dye.replace('_', ' ') + ' cutoff {:d}, {:d} rotamers'.format(cutoff,
+                                                                                       len(clusters_cutoff.index)))
 
         plt.savefig(self.path + '/hist_{:s}_{:d}.pdf'.format(self.dye, cutoff))
 
@@ -483,7 +482,7 @@ class RotamerClusters(object):
         # Plot
         sns.set_style('darkgrid')
 
-        fig, axes = plt.subplots(np.round(num_dihedrals/3).astype(int), num_dihedrals % 3 + 1,
+        fig, axes = plt.subplots(np.round(num_dihedrals/3).astype(int), 3,
                                  sharex=False, sharey=False, subplot_kw=dict(polar=True), figsize=(9, 7))
 
         for i, ax in enumerate(axes.flatten()):
