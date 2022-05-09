@@ -435,7 +435,13 @@ class FRETpredict(Operations):
             distribution = np.bincount(rdist, weights=boltzmann_weights_norm.flatten(), minlength=self.rax.size)
 
             # Write the calculated distribution for each frame in the H5PY dataset
-            distributions[frame_ndx] = distribution
+            try:
+
+                distributions[frame_ndx] = distribution
+
+            except:
+
+                continue
 
         # Close H5PY file
         f.close()
