@@ -17,7 +17,7 @@ import MDAnalysis
 import re
 
 # Inner imports
-from utils import Operations
+from .utils import Operations
 
 
 class FRETpredict(Operations):
@@ -284,7 +284,7 @@ class FRETpredict(Operations):
         acceptor_spectrum[['Emission', 'Excitation']] = acceptor_spectrum[['Emission', 'Excitation']] / 100
 
         # Quantum yield and extinction coefficient data for the chromophores
-        chromophore_data = pd.read_csv('lib/R0/Dyes_extinction_QD.csv', delimiter=',', on_bad_lines='skip',
+        chromophore_data = pd.read_csv(f'{self.r0lib}/Dyes_extinction_QD.csv', delimiter=',', on_bad_lines='skip',
                                        names=['Type', 'Chromophore', 'Ext_coeff', 'QD'])
 
         # R0 calculation parameters
