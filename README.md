@@ -15,7 +15,7 @@ To install FRETpredict, use the [PyPI package](https://pypi.org/project/FRETpred
   pip install FRETpredict
 ```
 
-or clone the repo:
+or clone the repo and install locally:
 
 ```bash
   git clone https://github.com/KULL-Centre/FRETpredict.git
