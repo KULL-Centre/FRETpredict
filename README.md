@@ -67,7 +67,7 @@ Testing
 ```
 Structure
 ---------
-
+```
 FRETpredict/
 ├─ FRETpredict/
 │  ├─ lib/
@@ -90,18 +90,19 @@ FRETpredict/
 ├─ LICENSE
 ├─ README.md
 ├─ setup.py
+```
 
 Contributors
 -------------
 
 [Daniele Montepietra (@Monte95)](https://github.com/Monte95)
 
+[Giulio Tesei (@gitesei)](https://github.com/gitesei)
+
 [João M Martins (@joaommartins)](https://github.com/joaommartins)
 
 [Micha BA Kunze (@mbakunze)](https://github.com/mbakunze)
 
 [Ramon Crehuet (@rcrehuet)](https://github.com/rcrehuet)
-
-[Giulio Tesei (@gitesei)](https://github.com/gitesei)
 
 [Kresten Lindorff-Larsen (@lindorff-larsen)](https://github.com/lindorff-larsen)
