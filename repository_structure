@@ -5,7 +5,10 @@ FRETpredict/
 │  ├─ test_systems/
 │  │  ├─ Hsp90/
 │  ├─ tutorials/
+│  │  ├─ genLIB/
 │  │  ├─ test/
+│  │  ├─ Tutorial_FRETpredict_Hsp90.ipynb
+│  │  ├─ Tutorial_generate_new_rotamer_libraries.ipynb
 │  ├─ FRET.py
 │  ├─ lennardjones.py
 │  ├─ libraries.py
