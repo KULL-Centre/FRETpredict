@@ -42,7 +42,7 @@ FRET = FRETpredict(protein=u, residues=[452, 637], chains=['A', 'B'], temperatur
                    fixed_R0=True, r0=6.3, electrostatic=True,
                    libname_1='AlexaFluor 594 C1R cutoff10',
                    libname_2='AlexaFluor 568 C1R cutoff10', 
-                   output_prefix='test/E10_594_568')
+                   output_prefix='E10_594_568')
 
 # Run FRET efficiency calculations.
 FRET.run()
