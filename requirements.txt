@@ -1,5 +1,5 @@
 Cython
-MDAnalysis==1.1.1
+MDAnalysis==2.0.0
 numpy
 pandas
 seaborn
