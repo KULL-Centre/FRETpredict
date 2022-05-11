@@ -32,7 +32,7 @@ def find_version(*file_paths):
 setup(
     name='FRETpredict',
     version=find_version('FRETpredict', '__init__.py'),
-    description='A package for FRET predictions based on protein conformational ensembles. Can be installed with pip.',
+    description='A package for FRET Efficiency prediction of protein structures and trajectories, based on the Rotamer Library Approach (RLA). Can be installed with pip.',
     long_description_content_type='text/markdown',
     long_description=long_description,
     url='https://github.com/KULL-Centre/FRETpredict',
@@ -52,7 +52,7 @@ setup(
     keywords='',
     packages=find_packages(exclude=['docs', 'tests*']),
     include_package_data=True,
-    author='João M Martins, Micha BA Kunze, Giulio Tesei, Daniele Montepietra and Kresten Lindorff-Larsen',
+    author='Daniele Montepietra, Giulio Tesei, João M Martins, Micha BA Kunze, and Kresten Lindorff-Larsen',
     install_requires=install_requires,
     depedency_links=dependency_links
 )
