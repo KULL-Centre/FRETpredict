@@ -26,6 +26,16 @@ or clone the repo and install locally:
 
 The software requires Python 3.6+.
 
+Testing
+-------
+
+```bash
+  git clone https://github.com/KULL-Centre/FRETpredict.git
+  cd tests
+
+  pytest
+```
+
 Code Example
 ------------
 
@@ -56,15 +66,7 @@ Tutorial
 
 - __[Generate new rotamer libraries](https://github.com/Monte95/FRETpredict/blob/4801657d416094efbf1d7237e7d927415422243a/FRETpredict/tutorials/Tutorial_generate_new_rotamer_libraries.ipynb)__ : Jupyter Notebook on how to create and add new rotamer libraries.
 
-Testing
--------
 
-```bash
-  git clone https://github.com/KULL-Centre/FRETpredict.git
-  cd FRETpredict
-
-  python -m pytest
-```
 Structure
 ---------
 ```
@@ -87,6 +89,7 @@ FRETpredict/
 │  ├─ utils.py
 │  ├─ __init__.py
 ├─ tests/
+|  ├─ test_Hsp90.py
 ├─ LICENSE
 ├─ README.md
 ├─ setup.py
