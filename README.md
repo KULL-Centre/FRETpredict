@@ -50,8 +50,8 @@ u = MDAnalysis.Universe('test_systems/Hsp90/openHsp90.pdb')
 # Create instance of the FRETpredict class
 FRET = FRETpredict(protein=u, residues=[452, 637], chains=['A', 'B'], temperature=293, 
                    fixed_R0=True, r0=6.3, electrostatic=True,
-                   libname_1='AlexaFluor 594 C1R cutoff10',
-                   libname_2='AlexaFluor 568 C1R cutoff10', 
+                   libname_1='AlexaFluor 594 C1R cutoff30',
+                   libname_2='AlexaFluor 568 C1R cutoff30', 
                    output_prefix='E10_594_568')
 
 # Run FRET efficiency calculations.
