@@ -59,8 +59,8 @@ FRET.run()
 
 ```
 
-Tutorial
---------
+Tutorials
+---------
 
 - __[Tutorial_FRETpredict_Hsp90](https://github.com/Monte95/FRETpredict/blob/4801657d416094efbf1d7237e7d927415422243a/FRETpredict/tutorials/Tutorial_FRETpredict_Hsp90.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system.
 
