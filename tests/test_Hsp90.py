@@ -1,45 +1,96 @@
 import pytest
 import MDAnalysis
 import numpy as np
-from FRETpredict.FRET import FRETpredict
+from FRETpredict import FRETpredict
 
-def test_HIV1PR_PDBs():
-    u = MDAnalysis.Universe('tests/data/HIV-1PR/PDBs/HIV-1PR.pdb')
-    DEER = DEERpredict(u, residues = [55, 55], chains=['A', 'B'], log_file = 'tests/data/HIV-1PR/log', rmax=7.5)
-    DEER.run(output_prefix = 'tests/data/HIV-1PR/res', filter_stdev = 0.0707)
-    r, p = np.loadtxt('tests/data/HIV-1PR/res-55-55.dat',unpack=True)
-    r_ref, p_ref = np.loadtxt('tests/data/HIV-1PR/DEER_HIV-1PR.dat',unpack=True)
-    p_ref /= np.trapz(p_ref, r_ref)
-    assert np.power(p-p_ref,2).sum() < 0.001
-    for pdb in ['3bvb','2bpx','1hhp','1tw7']:
-        u = MDAnalysis.Universe('tests/data/HIV-1PR/PDBs/{:s}.pdb'.format(pdb))
-        DEER = DEERpredict(u, residues = [55,55], chains=['A', 'B'], rmax=7.5)
-        DEER.run(output_prefix = 'tests/data/HIV-1PR/PDBs/'+pdb, filter_stdev = 0.0707, dt = 5.49/511)
-        x, y = np.loadtxt('tests/data/HIV-1PR/PDBs/'+pdb+'-55-55_time-domain.dat',unpack=True)
-        x_ref, y_ref = np.loadtxt('tests/data/HIV-1PR/PDBs/REF'+pdb+'-55-55_time-domain.dat',unpack=True)
-        assert np.power(y-y_ref,2).sum() < 0.0001
-        r, p = np.loadtxt('tests/data/HIV-1PR/PDBs/'+pdb+'-55-55.dat',unpack=True)
-        r_ref, p_ref = np.loadtxt('tests/data/HIV-1PR/PDBs/REF'+pdb+'-55-55.dat',unpack=True)
-        assert np.power(p-p_ref,2).sum() < 0.0001
+# Test with single frame, explicit R0 calculation
+def test_Hsp90_R0_calculation():
+    
+    # Import protein structure
+    u = MDAnalysis.Universe('../test_systems/Hsp90/openHsp90.pdb')
+    
+    # Instantiate class object
+    FRET = FRETpredict(protein=u, residues=[452, 637], temperature=293, 
+                   chains=['A', 'B'], 
+                   donor='AlexaFluor 594', acceptor='AlexaFluor 568', 
+                   electrostatic=True, r0lib='../lib/R0/',
+                   libname_1=f'AlexaFluor 594 C1R cutoff30',
+                   libname_2=f'AlexaFluor 568 C1R cutoff30', 
+                   output_prefix=f'data/E30')
+    
+    # Run FRETpredict calculations
+    assert FRET.run(), "Cannot calculate FRET Efficiency with explicit R0 calculation"
+    
+    # Read computed data from file
+    assert pd.read_pickle(r'data/E30-data-594-568.pkl'), 
+    "Could not read FRET data from file (explicit R0 calculations)"
 
-def test_HIV1PR_SIMs():
-    for sim in ['unbiased','rdc']:
-        u = MDAnalysis.Universe('tests/data/HIV-1PR/sims/{:s}.pdb'.format(sim),'tests/data/HIV-1PR/sims/{:s}.xtc'.format(sim))
-        DEER = DEERpredict(u, residues = [55,55], chains=['A', 'B'], z_cutoff = 0.05, rmax=7.5)
-        DEER.run(output_prefix='tests/data/HIV-1PR/sims/{:s}'.format(sim), filter_stdev = 0.0707, dt = 5.49/511)
-        x, y = np.loadtxt('tests/data/HIV-1PR/sims/'+sim+'-55-55_time-domain.dat',unpack=True)
-        x_ref, y_ref = np.loadtxt('tests/data/HIV-1PR/sims/REF'+sim+'-55-55_time-domain.dat',unpack=True)
-        assert np.power(y-y_ref,2).sum() < 0.0001
-        r, p = np.loadtxt('tests/data/HIV-1PR/sims/'+sim+'-55-55.dat',unpack=True)
-        r_ref, p_ref = np.loadtxt('tests/data/HIV-1PR/sims/REF'+sim+'-55-55.dat',unpack=True)
-        assert np.power(p-p_ref,2).sum() < 0.0001
+# Test with single frame, fixed R0 value
+def test_Hsp90_fixed_R0():
+    
+    # Import protein structure
+    u = MDAnalysis.Universe('../test_systems/Hsp90/openHsp90.pdb')
+    
+    # Instantiate class object
+    FRET_fixedR0 = FRETpredict(protein=u, residues=[452, 637], temperature=293, 
+                           chains=['A', 'B'], 
+                           fixed_R0=True, r0=5.5, electrostatic=True,
+                           libname_1=f'AlexaFluor 594 C1R cutoff30',
+                           libname_2=f'AlexaFluor 568 C1R cutoff30', 
+                           output_prefix=f'data/E30_fixedR0')
+    
+    # Run FRETpredict calculations
+    assert FRET.run(), "Cannot calculate FRET Efficiency with fixed R0"
+    
+    # Read computed data from file
+    assert pd.read_pickle(r'data/E30_fixedR0-data-594-568.pkl'), 
+    "Could not read FRET data from file (fixed R0)"
 
-def test_T4L():
-    for pdb in ['3dmv','2lcb','2lc9']:
-        u = MDAnalysis.Universe('tests/data/T4L/PDBs/{:s}.pdb'.format(pdb))
-        for residues in [[89, 109],[109, 140]]:
-            DEER = DEERpredict(u, residues = residues, temperature = 298, z_cutoff = 0.05, rmax = 7.5)
-            DEER.run(output_prefix = 'tests/data/T4L/PDBs/{:s}'.format(pdb), filter_stdev = 0.0707)
-            r, p = np.loadtxt('tests/data/T4L/PDBs/{:s}-{:d}-{:d}.dat'.format(pdb,*residues),unpack=True)
-            r_ref, p_ref = np.loadtxt('tests/data/T4L/PDBs/REF{:s}-{:d}-{:d}.dat'.format(pdb,*residues),unpack=True)
-            assert np.power(p-p_ref,2).sum() < 0.0001
+# Test with trajectory, explicit R0 calculations
+def test_Hsp90_trajectory_R0_calculation():
+    
+    # Import protein trajectory
+    u = MDAnalysis.Universe('../test_systems/Hsp90/conf.pdb', 
+                            '../test_systems/Hsp90/Hsp90_open_all.xtc')
+    
+    # Instantiate class object
+    FRET_traj = FRETpredict(protein=u, residues=[452, 637], temperature=293, 
+                        chains=['A', 'B'], 
+                        donor='AlexaFluor 594', acceptor='AlexaFluor 568', 
+                        electrostatic=True, r0lib='../lib/R0/',
+                        libname_1=f'AlexaFluor 594 C1R cutoff30',
+                        libname_2=f'AlexaFluor 568 C1R cutoff30', 
+                        output_prefix=f'data/E30_traj')
+    
+    # Run FRETpredict calculations
+    assert FRET.run(), "Cannot calculate FRET Efficiency for trajectory with explicit R0 calculation"
+    
+    # Read computed data from file
+    assert pd.read_pickle(r'data/E30_traj-data-594-568.pkl'), 
+    "Could not read FRET data from file (trajectory with explicit R0 calculations)"
+
+# Test with trajectory, fixed R0 value
+def test_Hsp90_trajectory_fixed_R0():
+    
+    # Import protein trajectory
+    u = MDAnalysis.Universe('../test_systems/Hsp90/conf.pdb', 
+                            '../test_systems/Hsp90/Hsp90_open_all.xtc')
+    
+    # Instantiate class object
+    FRET_traj = FRETpredict(protein=u, residues=[452, 637], temperature=293, 
+                        chains=['A', 'B'], 
+                        fixed_R0=True, r0=5.5, electrostatic=True,
+                        libname_1=f'AlexaFluor 594 C1R cutoff30',
+                        libname_2=f'AlexaFluor 568 C1R cutoff30', 
+                        output_prefix=f'data/E30_traj_fixedR0')
+    
+    # Run FRETpredict calculations
+    assert FRET.run(), "Cannot calculate FRET Efficiency for trajectory with fixed R0"
+    
+    # Read computed data from file
+    assert pd.read_pickle(r'data/E30_traj_fixedR0-data-594-568.pkl'), 
+    "Could not read FRET data from file (trajectory with fixed R0)"
+    
+    
+    
+ 
