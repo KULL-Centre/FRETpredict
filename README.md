@@ -30,6 +30,7 @@ Testing
 -------
 
 ```bash
+  pip install pytest
   git clone https://github.com/KULL-Centre/FRETpredict.git
   cd tests
 
