@@ -216,23 +216,6 @@ AlexaFluor 350 L1R:
   - N1 and resname A35
   r:
   - C5 and resname A35
-AlexaFluor 488:
-  author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
-  filename: A48_C1R_cutoff30
-  license: GPLv3
-  mu:
-  - C2
-  - C13 and resname A48
-  negative:
-  - S1 and resname A48
-  - S2 and resname A48
-  - C20 and resname A48
-  positive:
-  - N1 and resname A48
-  - N2 and resname A48
-  r:
-  - C7 and resname A48
 AlexaFluor 488 B1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
@@ -284,22 +267,6 @@ AlexaFluor 488 L1R:
   - N2 and resname A48
   r:
   - C7 and resname A48
-AlexaFluor 532:
-  author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
-  filename: A53_C1R_cutoff30
-  license: GPLv3
-  mu:
-  - C2
-  - C13 and resname A53
-  negative:
-  - S1 and resname A53
-  - S2 and resname A53
-  positive:
-  - N1 and resname A53
-  - N2 and resname A53
-  r:
-  - C7 and resname A53
 AlexaFluor 532 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
@@ -332,23 +299,6 @@ AlexaFluor 532 L1R:
   - N2 and resname A53
   r:
   - C7 and resname A53
-AlexaFluor 568:
-  author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
-  filename: A56_C1R_cutoff30
-  license: GPLv3
-  mu:
-  - C5
-  - C16 and resname A56
-  negative:
-  - S1 and resname A56
-  - S2 and resname A56
-  - C32 and resname A56
-  positive:
-  - N1 and resname A56
-  - N2 and resname A56
-  r:
-  - C10 and resname A56
 AlexaFluor 568 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
@@ -383,23 +333,6 @@ AlexaFluor 568 L1R:
   - N2 and resname A56
   r:
   - C10 and resname A56
-AlexaFluor 594:
-  author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
-  filename: A59_C1R_cutoff30
-  license: GPLv3
-  mu:
-  - C5
-  - C16 and resname A59
-  negative:
-  - S1 and resname A59
-  - S2 and resname A59
-  - C26 and resname A56
-  positive:
-  - N1 and resname A59
-  - N2 and resname A59
-  r:
-  - C10 and resname A59
 AlexaFluor 594 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD
@@ -434,24 +367,6 @@ AlexaFluor 594 L1R:
   - N2 and resname A59
   r:
   - C10 and resname A59
-AlexaFluor 647:
-  author: G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
-  filename: A64_C2R_cutoff30
-  license: GPLv3
-  mu:
-  - C4
-  - C15 and resname A64
-  negative:
-  - S1 and resname A64
-  - S2 and resname A64
-  - S3 and resname A64
-  - S4 and resname A64
-  positive:
-  - N1 and resname A64
-  - N2 and resname A64
-  r:
-  - C29 and resname A64
 AlexaFluor 647 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: TBD

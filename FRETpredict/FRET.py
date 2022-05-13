@@ -17,7 +17,7 @@ import MDAnalysis
 import re
 
 # Inner imports
-from utils import Operations
+from .utils import Operations
 
 
 class FRETpredict(Operations):
@@ -267,22 +267,25 @@ class FRETpredict(Operations):
 
         """
 
+        # Extract donor and acceptor producer and numbers from string
+        temp = re.compile("([a-zA-Z]+) ([0-9-a-zA-Z]+)")
+        donor_producer = temp.match(self.donor).groups()[0]
+        acceptor_producer = temp.match(self.acceptor).groups()[0]
+
+        donor_number = temp.match(self.donor).groups()[1]
+        acceptor_number = temp.match(self.acceptor).groups()[1]
+
         # Read donor spectrum from file and normalize max value to 1
-        donor_spectrum = pd.read_csv('{}/{}.csv'.format(self.r0lib, self.donor))
+        donor_spectrum = pd.read_csv(f'{self.r0lib}/{donor_producer}{donor_number}.csv')
         donor_spectrum[['Emission', 'Excitation']] = donor_spectrum[['Emission', 'Excitation']] / 100
 
         # Read acceptor spectrum from file and normalize max value to 1
-        acceptor_spectrum = pd.read_csv('{}/{}.csv'.format(self.r0lib, self.acceptor))
+        acceptor_spectrum = pd.read_csv(f'{self.r0lib}/{acceptor_producer}{acceptor_number}.csv')
         acceptor_spectrum[['Emission', 'Excitation']] = acceptor_spectrum[['Emission', 'Excitation']] / 100
 
         # Quantum yield and extinction coefficient data for the chromophores
-        chromophore_data = pd.read_csv('lib/R0/Dyes_extinction_QD.csv', delimiter=',', on_bad_lines='skip',
+        chromophore_data = pd.read_csv(f'{self.r0lib}/Dyes_extinction_QD.csv', delimiter=',', on_bad_lines='skip',
                                        names=['Type', 'Chromophore', 'Ext_coeff', 'QD'])
-
-        # Extract donor and acceptor numbers from string
-        temp = re.compile("([a-zA-Z]+) ([0-9-a-zA-Z]+)")
-        donor_number = temp.match(self.donor).groups()[1]
-        acceptor_number = temp.match(self.acceptor).groups()[1]
 
         # R0 calculation parameters
         # Initial factor, for R0 expressed in nm
@@ -292,10 +295,12 @@ class FRETpredict(Operations):
         n4 = 1.4 ** 4
 
         # Quantum yield of the donor in the acceptor absence
-        QD = float(chromophore_data['QD'].loc[chromophore_data['Chromophore'] == donor_number])
+        QD = float(chromophore_data['QD'].loc[(chromophore_data['Chromophore'] == donor_number) &
+                                              (chromophore_data['Type'] == donor_producer)])
 
         # Extinction coefficient of the acceptor at its peak absorption value (= max value)
-        ext_coeff_max = float(chromophore_data['Ext_coeff'].loc[chromophore_data['Chromophore'] == acceptor_number])
+        ext_coeff_max = float(chromophore_data['Ext_coeff'].loc[(chromophore_data['Chromophore'] == acceptor_number) &
+                                                                (chromophore_data['Type'] == acceptor_producer)])
 
         # Extinction coefficient spectrum of the acceptor
         ext_coeff_acceptor = (ext_coeff_max * acceptor_spectrum['Excitation']).fillna(0)
@@ -430,7 +435,13 @@ class FRETpredict(Operations):
             distribution = np.bincount(rdist, weights=boltzmann_weights_norm.flatten(), minlength=self.rax.size)
 
             # Write the calculated distribution for each frame in the H5PY dataset
-            distributions[frame_ndx] = distribution
+            try:
+
+                distributions[frame_ndx] = distribution
+
+            except:
+
+                continue
 
         # Close H5PY file
         f.close()

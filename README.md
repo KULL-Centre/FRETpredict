@@ -15,7 +15,7 @@ To install FRETpredict, use the [PyPI package](https://pypi.org/project/FRETpred
   pip install FRETpredict
 ```
 
-or clone the repo:
+or clone the repo and install locally:
 
 ```bash
   git clone https://github.com/KULL-Centre/FRETpredict.git
@@ -25,6 +25,17 @@ or clone the repo:
 ```
 
 The software requires Python 3.6+.
+
+Testing
+-------
+
+```bash
+  pip install pytest
+  git clone https://github.com/KULL-Centre/FRETpredict.git
+  cd tests
+
+  pytest
+```
 
 Code Example
 ------------
@@ -40,30 +51,49 @@ u = MDAnalysis.Universe('test_systems/Hsp90/openHsp90.pdb')
 # Create instance of the FRETpredict class
 FRET = FRETpredict(protein=u, residues=[452, 637], chains=['A', 'B'], temperature=293, 
                    fixed_R0=True, r0=6.3, electrostatic=True,
-                   libname_1='AlexaFluor 594 C1R cutoff10',
-                   libname_2='AlexaFluor 568 C1R cutoff10', 
-                   output_prefix='test/E10_594_568')
+                   libname_1='AlexaFluor 594 C1R cutoff30',
+                   libname_2='AlexaFluor 568 C1R cutoff30', 
+                   output_prefix='E30_594_568')
 
 # Run FRET efficiency calculations.
 FRET.run()
 
 ```
 
-Tutorial
---------
+Tutorials
+---------
 
-- __[Tutorial_FRETpredict_Hsp90](https://github.com/Monte95/FRETpredict/blob/e3311a7af03c045000e4ac69928307d7aca0d684/FRETpredict/tutorial_FRETpredict.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system.
+- __[Tutorial_FRETpredict_Hsp90](https://github.com/Monte95/FRETpredict/blob/4801657d416094efbf1d7237e7d927415422243a/FRETpredict/tutorials/Tutorial_FRETpredict_Hsp90.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system.
 
-- __[Generate new rotamer libraries](https://github.com/Monte95/FRETpredict/blob/00595bed3e52d628f34ffedd57a4b200be524872/FRETpredict/Tutorial_generate_new_rotamer_libraries.ipynb)__ : Jupyter Notebook on how to create and add new rotamer libraries.
+- __[Generate new rotamer libraries](https://github.com/Monte95/FRETpredict/blob/4801657d416094efbf1d7237e7d927415422243a/FRETpredict/tutorials/Tutorial_generate_new_rotamer_libraries.ipynb)__ : Jupyter Notebook on how to create and add new rotamer libraries.
 
-Testing
--------
 
-```bash
-  git clone https://github.com/KULL-Centre/FRETpredict.git
-  cd FRETpredict
-
-  python -m pytest
+Structure
+---------
+```
+FRETpredict/
+├─ FRETpredict/
+│  ├─ lib/
+│  │  ├─ R0/
+│  ├─ test_systems/
+│  │  ├─ Hsp90/
+│  ├─ tutorials/
+│  │  ├─ genLIB/
+│  │  ├─ test/
+│  │  ├─ Tutorial_FRETpredict_Hsp90.ipynb
+│  │  ├─ Tutorial_generate_new_rotamer_libraries.ipynb
+│  ├─ FRET.py
+│  ├─ lennardjones.py
+│  ├─ libraries.py
+│  ├─ R0_calculation.py
+│  ├─ rotamer_libraries.py
+│  ├─ utils.py
+│  ├─ __init__.py
+├─ tests/
+|  ├─ test_Hsp90.py
+├─ LICENSE
+├─ README.md
+├─ setup.py
 ```
 
 Contributors
@@ -71,12 +101,12 @@ Contributors
 
 [Daniele Montepietra (@Monte95)](https://github.com/Monte95)
 
+[Giulio Tesei (@gitesei)](https://github.com/gitesei)
+
 [João M Martins (@joaommartins)](https://github.com/joaommartins)
 
 [Micha BA Kunze (@mbakunze)](https://github.com/mbakunze)
 
 [Ramon Crehuet (@rcrehuet)](https://github.com/rcrehuet)
-
-[Giulio Tesei (@gitesei)](https://github.com/gitesei)
 
 [Kresten Lindorff-Larsen (@lindorff-larsen)](https://github.com/lindorff-larsen)

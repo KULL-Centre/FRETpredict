@@ -1,8 +1,7 @@
-import numpy as np
 import MDAnalysis
 from MDAnalysis.coordinates.memory import MemoryReader
-from lennardjones import lj_parameters
-import libraries
+from .lennardjones import lj_parameters
+from .libraries import *
 
 
 class Operations(object):
@@ -91,11 +90,11 @@ class Operations(object):
         # Chromophores libraries assignments
         # Chromophore 1
         self.libname_1 = kwargs.get('libname_1', 'Alexa 488')
-        self.lib_1 = libraries.RotamerLibrary(self.libname_1)
+        self.lib_1 = RotamerLibrary(self.libname_1)
 
         # Chromophore 2
         self.libname_2 = kwargs.get('libname_2', 'Alexa 594')
-        self.lib_2 = libraries.RotamerLibrary(self.libname_2)
+        self.lib_2 = RotamerLibrary(self.libname_2)
 
         # Parameters value for Boltzmann factor calculation assignment
         self.temp = kwargs.get('temperature', 300)
