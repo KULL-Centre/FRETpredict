@@ -8,7 +8,7 @@ from FRETpredict import FRETpredict
 def test_Hsp90_R0_calculation():
     
     # Import protein structure
-    u = MDAnalysis.Universe('../FRETpredict/test_systems/Hsp90/openHsp90.pdb')
+    u = MDAnalysis.Universe('tests/test_systems/Hsp90/openHsp90.pdb')
     
     # Instantiate class object
     FRET = FRETpredict(protein=u, residues=[452, 637], temperature=293, 
@@ -31,7 +31,7 @@ def test_Hsp90_R0_calculation():
 def test_Hsp90_fixed_R0():
     
     # Import protein structure
-    u = MDAnalysis.Universe('../FRETpredict/test_systems/Hsp90/openHsp90.pdb')
+    u = MDAnalysis.Universe('tests/test_systems/Hsp90/openHsp90.pdb')
     
     # Instantiate class object
     FRET_fixedR0 = FRETpredict(protein=u, residues=[452, 637], temperature=293, 

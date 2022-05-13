@@ -52,7 +52,7 @@ setup(
     keywords='',
     packages=find_packages(exclude=['docs', 'tests*']),
     include_package_data=True,
-    author='Daniele Montepietra, Giulio Tesei, João M Martins, Micha BA Kunze, and Kresten Lindorff-Larsen',
+    author='Daniele Montepietra, Giulio Tesei, João M Martins, Micha BA Kunze, Robert Best and Kresten Lindorff-Larsen',
     install_requires=install_requires,
     depedency_links=dependency_links
 )

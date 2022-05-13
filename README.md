@@ -31,10 +31,8 @@ Testing
 
 ```bash
   pip install pytest
-  git clone https://github.com/KULL-Centre/FRETpredict.git
-  cd tests
 
-  pytest
+  python -m pytest
 ```
 
 Code Example
@@ -75,13 +73,6 @@ FRETpredict/
 ├─ FRETpredict/
 │  ├─ lib/
 │  │  ├─ R0/
-│  ├─ test_systems/
-│  │  ├─ Hsp90/
-│  ├─ tutorials/
-│  │  ├─ genLIB/
-│  │  ├─ test/
-│  │  ├─ Tutorial_FRETpredict_Hsp90.ipynb
-│  │  ├─ Tutorial_generate_new_rotamer_libraries.ipynb
 │  ├─ FRET.py
 │  ├─ lennardjones.py
 │  ├─ libraries.py
@@ -91,6 +82,13 @@ FRETpredict/
 │  ├─ __init__.py
 ├─ tests/
 |  ├─ test_Hsp90.py
+│  ├─ test_systems/
+│  │  ├─ Hsp90/
+│  ├─ tutorials/
+│  │  ├─ genLIB/
+│  │  ├─ test/
+│  │  ├─ Tutorial_FRETpredict_Hsp90.ipynb
+│  │  ├─ Tutorial_generate_new_rotamer_libraries.ipynb
 ├─ LICENSE
 ├─ README.md
 ├─ setup.py
@@ -107,6 +105,6 @@ Contributors
 
 [Micha BA Kunze (@mbakunze)](https://github.com/mbakunze)
 
-[Ramon Crehuet (@rcrehuet)](https://github.com/rcrehuet)
+[Robert Best (@bestlab)](https://github.com/bestlab)
 
 [Kresten Lindorff-Larsen (@lindorff-larsen)](https://github.com/lindorff-larsen)
