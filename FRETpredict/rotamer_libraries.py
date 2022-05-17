@@ -292,10 +292,10 @@ class RotamerClusters(object):
         u = MDAnalysis.Universe(self.libpath + self.dye + '/conf_ed.gro', self.libpath + self.dye + '/traj.xtc')
 
         # Select dye+linker atoms
-        alexa = u.select_atoms('all and not (resname ACE or resname NHE)')
+        chromophore = u.select_atoms('all and not (resname ACE or resname NHE)')
 
         # Write PDB for first frame
-        alexa.write(self.path + 'rot_lib_{:s}.pdb'.format(self.dye))
+        chromophore.write(self.path + 'rot_lib_{:s}.pdb'.format(self.dye))
 
         # Select Ca, N, and C atoms of the linker, to position on the target protein residue
         Ca_pos = u.select_atoms('all and not (resname ACE or resname NHE) and name CA')
@@ -312,7 +312,7 @@ class RotamerClusters(object):
             Ca_coords = Ca_pos.positions - offset
             N_coords = N_pos.positions - offset
             C_coords = C_pos.positions - offset
-            alexa_coords = alexa.positions - offset
+            chromophore_coords = chromophore.positions - offset
 
             # Create unitary x vector (Ca-N bond)
             x_vector = N_coords - Ca_coords
@@ -333,13 +333,14 @@ class RotamerClusters(object):
             rotation = np.array((x_vector, y_vector, z_vector)).T
 
             # Rotate chromophore rotamers using the rotation matrix
-            alexa_coords = np.dot(alexa_coords, rotation.reshape(3, 3))
-            alexa_coords = alexa_coords.reshape((len(alexa_coords), 3))
+            chromophore_coords = np.dot(chromophore_coords, rotation.reshape(3, 3))
+            chromophore_coords = chromophore_coords.reshape((len(chromophore_coords), 3))
 
             # Add new cluster center C3 coordinates to the array
-            new_coords = np.append(new_coords, alexa_coords)
+            new_coords = np.append(new_coords, chromophore_coords)
 
-        new_coords = new_coords.reshape((len(clusters.frame.values), len(alexa), 3))
+        # Reshape and rescale the coordinates (MDAnalysis length unit is Å, MDTraj length unit is nm)
+        new_coords = new_coords.reshape((len(clusters.frame.values), len(chromophore), 3)) / 10
 
         # Write cluster data (index, atom number, coordinates, cluster population) for each
         # atom to file
@@ -350,9 +351,9 @@ class RotamerClusters(object):
             for atom_index, atom in enumerate(conformer):
                 output_file.write(
                     '{0:>3} {1:>3} {2[0]:> 10.6f} {2[1]:> 10.6f} {2[2]:> 10.6f} {3:>5}\n'.format(index + 1,
-                                                                                                 alexa[
+                                                                                                 chromophore[
                                                                                                      atom_index].id -
-                                                                                                 alexa[1].id,
+                                                                                                 chromophore[1].id,
                                                                                                  atom,
                                                                                                  clusters.N.values[
                                                                                                      index]))

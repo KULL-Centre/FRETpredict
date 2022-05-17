@@ -427,6 +427,8 @@ class FRETpredict(Operations):
             # Dynamic2 Regime
             A_avg = np.dot(3. / 2. * k2 / ratio6, boltzmann_weights_norm)
             edyn2_avg[frame_ndx] = A_avg / (A_avg + 1)
+            print(rdist)
+            print(self.r0)
 
             # Calculate normalized rdist between 0 and 1
             rdist = np.round((self.nr * (rdist - self.rmin)) / (self.rmax - self.rmin)).astype(int).flatten()
