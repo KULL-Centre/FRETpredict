@@ -41,10 +41,10 @@ Code Example
 ```python
 
 import MDAnalysis
-from FRET import FRETpredict
+from FRETpredict import FRETpredict
 
 # Create a MDAnalysis.Universe object for the protein structure.
-u = MDAnalysis.Universe('test_systems/Hsp90/openHsp90.pdb')
+u = MDAnalysis.Universe('tests/test_systems/Hsp90/openHsp90.pdb')
 
 # Create instance of the FRETpredict class
 FRET = FRETpredict(protein=u, residues=[452, 637], chains=['A', 'B'], temperature=293, 
@@ -61,9 +61,9 @@ FRET.run()
 Tutorials
 ---------
 
-- __[Tutorial_FRETpredict_Hsp90](https://github.com/Monte95/FRETpredict/blob/4801657d416094efbf1d7237e7d927415422243a/FRETpredict/tutorials/Tutorial_FRETpredict_Hsp90.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system.
+- __[Tutorial_FRETpredict_Hsp90](https://github.com/Monte95/FRETpredict/blob/eef8bf0d219109ada605e943ecc4b1aa9dde86df/tests/tutorials/Tutorial_FRETpredict_Hsp90.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system.
 
-- __[Generate new rotamer libraries](https://github.com/Monte95/FRETpredict/blob/4801657d416094efbf1d7237e7d927415422243a/FRETpredict/tutorials/Tutorial_generate_new_rotamer_libraries.ipynb)__ : Jupyter Notebook on how to create and add new rotamer libraries.
+- __[Generate new rotamer libraries](https://github.com/Monte95/FRETpredict/blob/eef8bf0d219109ada605e943ecc4b1aa9dde86df/tests/tutorials/Tutorial_generate_new_rotamer_libraries.ipynb)__ : Jupyter Notebook on how to create and add new rotamer libraries.
 
 
 Structure
