@@ -1,3 +1,4 @@
+import numpy as np
 import MDAnalysis
 from MDAnalysis.coordinates.memory import MemoryReader
 from .lennardjones import lj_parameters
@@ -298,11 +299,10 @@ class Operations(object):
         universe.load_new(probe_coords, format=MemoryReader, order='afc')
 
         # Save aligned rotamers
-        # mtssl = universe.select_atoms("all")
-        # with MDAnalysis.Writer(lib.name + ".pdb", mtssl.n_atoms) as W:
-        #     for ts in universe.trajectory:
-        #         W.write(mtssl)
-
+        rotamers = universe.select_atoms("all")
+        with MDAnalysis.Writer(lib.name + ".pdb", rotamers.n_atoms) as W:
+            for ts in universe.trajectory:
+                W.write(rotamers)
         return universe
 
     def lj_calculation(self, fitted_rotamers, LJ_data):
