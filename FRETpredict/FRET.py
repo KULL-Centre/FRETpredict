@@ -82,10 +82,6 @@ class FRETpredict(Operations):
         stdev: float
             Standard deviation
 
-        output_reweight_prefix: str
-            Prefix used in saving data to file when reweighting
-
-
 
     Methods
     =======
@@ -145,7 +141,6 @@ class FRETpredict(Operations):
         self.load_file = kwargs.get('load_file', False)
         self.weights = kwargs.get('weights', False)
         self.stdev = kwargs.get('filter_stdev', 0.02)
-        self.output_reweight_prefix = kwargs.get('reweight_prefix', self.output_prefix + '-reweighted')
 
         # Logging set up
         logging.basicConfig(filename=kwargs.get('log_file', 'log'), level=logging.INFO)
@@ -487,6 +482,7 @@ class FRETpredict(Operations):
         """
 
         reweight = kwargs.get('reweight', False)
+        output_reweight_prefix = kwargs.get('reweight_prefix', self.output_prefix)
 
         # Load <k2> distribution from file
         k2 = np.loadtxt(self.output_prefix + '-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
@@ -495,7 +491,7 @@ class FRETpredict(Operations):
         if reweight:
             self.weights = np.genfromtxt(
                 self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
-            
+
             print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
 
         # Check if weights is an array
@@ -568,7 +564,7 @@ class FRETpredict(Operations):
                               columns=['Average', 'SD', 'SE'], index=['k2', 'Estatic', 'Edynamic1', 'Edynamic2'])
 
         # Save DataFrame in pickle format
-        df.to_pickle(self.output_reweight_prefix + '-data-{:d}-{:d}.pkl'.format(self.residues[0], self.residues[1]))
+        df.to_pickle(output_reweight_prefix + '-data-{:d}-{:d}.pkl'.format(self.residues[0], self.residues[1]))
 
     def run(self, **kwargs):
 
