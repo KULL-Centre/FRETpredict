@@ -44,14 +44,14 @@ import MDAnalysis
 from FRETpredict import FRETpredict
 
 # Create a MDAnalysis.Universe object for the protein structure.
-u = MDAnalysis.Universe('tests/test_systems/Hsp90/openHsp90.pdb')
+u = MDAnalysis.Universe('tests/test_systems/pp11/pp11.pdb', 'tests/test_systems/pp11/pp11.xtc')
 
 # Create instance of the FRETpredict class
-FRET = FRETpredict(protein=u, residues=[452, 637], chains=['A', 'B'], temperature=293, 
-                   fixed_R0=True, r0=6.3, electrostatic=True,
-                   libname_1='AlexaFluor 594 C1R cutoff30',
-                   libname_2='AlexaFluor 568 C1R cutoff30', 
-                   output_prefix='E30_594_568')
+FRET = FRETpredict(protein=u, residues=[0, 12], chains=['A', 'A'], temperature=298, 
+                   donor='AlexaFluor 488', acceptor='AlexaFluor 594', electrostatic=True,
+                   libname_1=f'AlexaFluor 488 C1R cutoff10',
+                   libname_2=f'AlexaFluor 594 C1R cutoff10',  
+                   output_prefix='E_pp11')
 
 # Run FRET efficiency calculations.
 FRET.run()
