@@ -82,6 +82,11 @@ class FRETpredict(Operations):
         stdev: float
             Standard deviation
 
+        output_reweight_prefix: str
+            Prefix used in saving data to file when reweighting
+
+
+
     Methods
     =======
 
@@ -140,6 +145,7 @@ class FRETpredict(Operations):
         self.load_file = kwargs.get('load_file', False)
         self.weights = kwargs.get('weights', False)
         self.stdev = kwargs.get('filter_stdev', 0.02)
+        self.output_reweight_prefix = kwargs.get('reweight_prefix', self.output_prefix + '-reweighted')
 
         # Logging set up
         logging.basicConfig(filename=kwargs.get('log_file', 'log'), level=logging.INFO)
@@ -456,6 +462,10 @@ class FRETpredict(Operations):
         np.savetxt(self.output_prefix + '-Z-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
                    zarray.reshape(-1, 2))
 
+        # Save per-frame weights
+        np.savetxt(self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+                   self.calculate_ws())
+
         # Save <k2> distribution
         np.savetxt(self.output_prefix + '-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), k2_avg)
 
@@ -468,7 +478,7 @@ class FRETpredict(Operations):
         # Save <E>_dynamic2 distribution
         np.savetxt(self.output_prefix + '-Ed2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), edyn2_avg)
 
-    def save(self):
+    def save(self, **kwargs):
 
         """
 
@@ -476,8 +486,17 @@ class FRETpredict(Operations):
 
         """
 
+        reweight = kwargs.get('reweight', False)
+
         # Load <k2> distribution from file
         k2 = np.loadtxt(self.output_prefix + '-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+
+        # Compute per-frame weights for reweighting if requested
+        if reweight:
+            self.weights = np.genfromtxt(
+                self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+            
+            print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
 
         # Check if weights is an array
         if isinstance(self.weights, np.ndarray):
@@ -549,7 +568,7 @@ class FRETpredict(Operations):
                               columns=['Average', 'SD', 'SE'], index=['k2', 'Estatic', 'Edynamic1', 'Edynamic2'])
 
         # Save DataFrame in pickle format
-        df.to_pickle(self.output_prefix + '-data-{:d}-{:d}.pkl'.format(self.residues[0], self.residues[1]))
+        df.to_pickle(self.output_reweight_prefix + '-data-{:d}-{:d}.pkl'.format(self.residues[0], self.residues[1]))
 
     def run(self, **kwargs):
 
