@@ -57,6 +57,14 @@ FRET = FRETpredict(protein=u, residues=[0, 12], chains=['A', 'A'], temperature=2
 FRET.run()
 
 ```
+To add reweighting calculations
+
+```python
+
+FRET.save(reweight=True)
+
+```
+
 
 Tutorials
 ---------
