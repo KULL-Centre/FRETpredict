@@ -61,7 +61,7 @@ To add reweighting calculations
 
 ```python
 
-FRET.save(reweight=True)
+FRET.save(reweight=True, reweight_prefix='E_pp11_reweighted')
 
 ```
 
