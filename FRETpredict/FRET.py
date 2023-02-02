@@ -611,6 +611,8 @@ class FRETpredict(Operations):
             # Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in static, dynamic1, and
             # dynamic2 regimes.
             self.trajectoryAnalysis()
+            
+            print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
 
             # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
             self.save()

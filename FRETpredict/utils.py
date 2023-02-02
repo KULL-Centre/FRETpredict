@@ -503,8 +503,17 @@ class Operations(object):
     def fraction_frames(self):
 
         """ Compute effective fraction of frames contributing to the averages """
+        
+        if isinstance(self.weights, np.ndarray):
+        
+        	w_s = self.weights
+        
+        elif self.weights == False:
+        
+        	w_s = np.genfromtxt(
+        	self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
 
-        ws_correct = self.weights[self.weights != 0]
+        ws_correct = w_s[w_s != 0]
         ws_0 = np.zeros(len(ws_correct))
         ws_0[:] = 1 / len(ws_correct)
 
