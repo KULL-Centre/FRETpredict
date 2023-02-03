@@ -69,7 +69,7 @@ FRET.save(reweight=True, reweight_prefix='E_pp11_reweighted')
 Tutorials
 ---------
 
-- __[Tutorial_FRETpredict_Hsp90](https://github.com/Monte95/FRETpredict/blob/eef8bf0d219109ada605e943ecc4b1aa9dde86df/tests/tutorials/Tutorial_FRETpredict_Hsp90.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Hsp90 system.
+- __[Tutorial_FRETpredict_pp11](https://github.com/Monte95/FRETpredict/blob/eef8bf0d219109ada605e943ecc4b1aa9dde86df/tests/tutorials/Tutorial_FRETpredict_pp11.ipynb)__ : Jupyter Notebook with simple tutorials on how to use the code on the Poliproline 11 (pp11) system.
 
 - __[Generate new rotamer libraries](https://github.com/Monte95/FRETpredict/blob/eef8bf0d219109ada605e943ecc4b1aa9dde86df/tests/tutorials/Tutorial_generate_new_rotamer_libraries.ipynb)__ : Jupyter Notebook on how to create and add new rotamer libraries.
 
