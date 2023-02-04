@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/fretpredict/badge/?version=latest)](https://fretpredict.readthedocs.io/en/latest/?badge=latest)
+
 FRETpredict
 ===========
 
