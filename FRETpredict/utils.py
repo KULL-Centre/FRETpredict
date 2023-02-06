@@ -71,6 +71,13 @@ class Operations(object):
             weightedAvgSDSE(values, weights)
                 Calculate the weighted average and standard deviation.
 
+            calculate_ws()
+                Calculate per-frame weights for reweighting.
+
+            fraction_frames():
+                Compute effective fraction of frames contributing to the averages
+
+
     """
 
     def __init__(self, protein, **kwargs):
@@ -303,6 +310,7 @@ class Operations(object):
         with MDAnalysis.Writer(lib.name + ".pdb", rotamers.n_atoms) as W:
             for ts in universe.trajectory:
                 W.write(rotamers)
+
         return universe
 
     def lj_calculation(self, fitted_rotamers, LJ_data):
@@ -477,3 +485,40 @@ class Operations(object):
         sem = np.sqrt(variance / values.size)
 
         return (avg, std, sem)
+
+    def calculate_ws(self):
+
+        """ Calculate per-frame weights for reweighting """
+
+        Z = np.genfromtxt(self.output_prefix + '-Z-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+                          skip_header=-1,
+                          skip_footer=0,
+                          delimiter=' ')
+
+        Z_s = Z[:, 0] * Z[:, 1]
+        w_s = Z_s / np.sum(Z_s)
+
+        return w_s
+
+    def fraction_frames(self):
+
+        """ Compute effective fraction of frames contributing to the averages """
+        
+        if isinstance(self.weights, np.ndarray):
+        
+        	w_s = self.weights
+        
+        elif self.weights == False:
+        
+        	w_s = np.genfromtxt(
+        	self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+
+        ws_correct = w_s[w_s != 0]
+        ws_0 = np.zeros(len(ws_correct))
+        ws_0[:] = 1 / len(ws_correct)
+
+        S = - np.sum(ws_correct * np.log(ws_correct / ws_0[ws_0 != 0]))
+
+        phi = np.exp(S)
+
+        return phi
