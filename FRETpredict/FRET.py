@@ -97,12 +97,11 @@ class FRETpredict(Operations):
             Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in static, dynamic1, and
             dynamic2 regimes.
 
-        save:
-            Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
+        reweight:
+            Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging, with or without reweighting. Save data to file.
 
         run:
-            Run FRET Efficiency calculations by calling trajectoryAnalysis() and save() functions or by loading
-            pre-computed data from file.
+            Run FRET Efficiency calculations by calling trajectoryAnalysis() and save data to file.
 
     """
 
@@ -473,15 +472,15 @@ class FRETpredict(Operations):
         # Save <E>_dynamic2 distribution
         np.savetxt(self.output_prefix + '-Ed2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), edyn2_avg)
 
-    def save(self, **kwargs):
+    def reweight(self, **kwargs):
 
         """
 
-        Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
+        Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging, with or without reweighting. Save data to file.
 
         """
 
-        reweight = kwargs.get('reweight', False)
+        reweight = kwargs.get('reweight', True)
         output_reweight_prefix = kwargs.get('reweight_prefix', self.output_prefix)
 
         # Load <k2> distribution from file
@@ -570,51 +569,18 @@ class FRETpredict(Operations):
 
         """
 
-        Run FRET Efficiency calculations by calling trajectoryAnalysis() and save() functions or by loading
-        pre-computed data from file.
-
-        **kwargs:
-        ========
-
-            data_filepath: str
-                Path of the data file with pre-computed data
+        Run FRET Efficiency calculations by calling trajectoryAnalysis() and save data to file.
+        
 
         """
 
-        data_filepath = kwargs.get('data_filepath', '')
-
-        # If a file with pre-computed data is already present
-        if self.load_file:
-
-            # If the file path is correct
-            if os.path.isfile(data_filepath):
-
-                # Info log
-                logging.info(
-                    'Loading pre-computed data from {} - will not load trajectory file.'.format(data_filepath))
-
-            # If the file path is not correct
-            else:
-
-                # Warning log
-                logging.info('File {} not found!'.format(data_filepath))
-
-                # Raise error
-                raise FileNotFoundError('File {} not found!'.format(data_filepath))
-
-            # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
-            self.save()
-
-        # If a file with pre-computed data isn't already present
-        else:
-
-            # Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in static, dynamic1, and
-            # dynamic2 regimes.
-            self.trajectoryAnalysis()
+        # Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in static, dynamic1, and
+        # dynamic2 regimes.
+        self.trajectoryAnalysis()
             
-            print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
+        print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
 
-            # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
-            self.save()
+        # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
+        self.reweight(reweight=False)
 
-            print('\nDone.')
+        print('\nDone.')
