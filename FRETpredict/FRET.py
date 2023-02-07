@@ -483,18 +483,10 @@ class FRETpredict(Operations):
 
         """
 
-#         reweight = kwargs.get('reweight', True)
         output_reweight_prefix = kwargs.get('reweight_prefix', self.output_prefix)
 
         # Load <k2> distribution from file
         k2 = np.loadtxt(self.output_prefix + '-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
-
-        # Compute per-frame weights for reweighting if requested
-#         if reweight:
-#             self.weights = np.genfromtxt(
-#                 self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
-
-#             print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
 
         # Check if weights is an array
         if isinstance(self.weights, np.ndarray):
