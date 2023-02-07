@@ -100,7 +100,7 @@ Compute reweighted FRET efficiency based on protein-dye interactions
 
 ```python
 
-FRET.save(reweight=True, reweight_prefix='E_pp11_reweighted')
+FRET.reweight(reweight_prefix='E_pp11_reweighted')
 
 ```
 
