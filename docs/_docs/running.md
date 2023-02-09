@@ -1,10 +1,8 @@
-# Running Calculations
+# Running FRETpredict calculations
 
-## FRETpredict
+The class for running the FRET efficiency calculations is `FRETpredict`.
 
-The class for running the PRE calculations is `FRETpredict`.
-
-Here is how to calculate FRET efficiencies from a single protein structure using the rotamer-library approach
+Here is how to calculate FRET efficiencies from protein trajectory using the Rotamer Library Approach (RLA).
 
 ~~~ python
 import MDAnalysis
@@ -33,7 +31,17 @@ Here is how to reweight the trajectory by per-frame weights.
 FRET.reweight(reweight_prefix='E_pp11_reweighted')
 ~~~
 
-In this other example, we reweight the trajectory by pre-computed weights, which are passed as a numpy array to the `weights` attribute.
-~~~ python
+This generates the pickle file named `E_pp11_reweighted-data-0-12.pkl` with all the reweighted parameters, which can be loaded as a pandas DataFrame.
 
+In this other example, we can directly obtain the reweighted FRET efficiencies using custom pre-computed weights, which are passed as a numpy array to the `weights` attribute in the `FRETpredict` class.
+
+~~~ python
+weights_pp11 = np.load('weights_pp11.npy')
+
+FRET = FRETpredict(protein=u, residues=[0, 12], chains=['A', 'A'], temperature=298, 
+                   donor='AlexaFluor 488', acceptor='AlexaFluor 594', electrostatic=True,
+                   libname_1=f'AlexaFluor 488 C1R cutoff10',
+                   libname_2=f'AlexaFluor 594 C1R cutoff10',  
+                   weights=weights_pp11,
+                   output_prefix='E_pp11_reweighted')
 ~~~
