@@ -73,6 +73,8 @@ Testing
 
   python -m pytest
 ```
+The tests reproduce reference data for the following protein systems:
+- Hsp90
 
 Code Example
 ------------
