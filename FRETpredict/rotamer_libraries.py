@@ -10,7 +10,6 @@ from scipy.cluster.vq import kmeans2
 
 
 class RotamerClusters(object):
-
     """
 
     Calculation of a rotamer library starting from a dye+linker trajectory.
@@ -89,7 +88,7 @@ class RotamerClusters(object):
         # Load dye+linker trajectory
         if self.traj_extension == 'xtc':
             t = md.load_xtc(self.libpath + self.dye + '/traj.xtc', self.libpath + self.dye + '/conf_ed.gro')
-            
+
         if self.traj_extension == 'dcd':
             t = md.load_dcd(self.libpath + self.dye + '/traj.dcd', self.libpath + self.dye + '/conf_ed.gro')
 
@@ -142,8 +141,8 @@ class RotamerClusters(object):
         plt.close(fig)
 
         # Append peak dihedral angles to the dye+linker dataframe
-        
-        self.df.loc[self.dye, 'peaks'] = peaks # np.array(peaks)
+
+        self.df.loc[self.dye, 'peaks'] = peaks  # np.array(peaks)
 
     def genClusters(self):
 
@@ -264,31 +263,38 @@ class RotamerClusters(object):
 
         # Dihedral angle values of the remaining cluster centers
         sel_dihe = np.array(clusters.dihe.tolist())
-        
-        # If the number of filtered clusters is not zero
+
+        # If the number of filtered clusters is zero
         if len(sel_dihe) == 0:
-        
-        	print(f'\nNo cluster has population > {cutoff}, so the total number of clusters is 0!')
-        	
-        	raise ValueError
-        	
+
+            # Cannot create a rotamer library with zero clusters
+            print(f'\nNo cluster has population > {cutoff}, so the total number of clusters is 0!')
+
+            raise ValueError
+
+        # If there are no discarded frames
+        elif len(discarded_frames) == 0:
+
+            # Save cluster centers to pickle file
+            clusters.to_pickle(self.path + 'clusters_{:s}_{:d}_cutoff.pkl'.format(self.dye, cutoff))
+
+        # If there are discarded frames to reassign
         else:
 
             # Iterate on every frame associated with the discarded cluster centers C2
             for frame_index, frame_dihe in enumerate(dihedrals[discarded_frames]):
-            	
+
                 # Compute square distance of each frame dihedral angle with cluster center C3
                 sqdist = (frame_dihe - sel_dihe) ** 2
-            	
+
                 # Compute sum of square distances of every dihedral angle for every peak combination
                 sumleastsq = np.sum(sqdist, axis=1)
 
                 # Assign every frame of discarded cluster center to closest cluster center C3
                 clusters.iloc[sumleastsq.argmin()]['N'] += frequency[frame_index]
-                
+
                 # Save filtered cluster centers to pickle file
                 clusters.to_pickle(self.path + 'clusters_{:s}_{:d}_cutoff.pkl'.format(self.dye, cutoff))
-        	
 
     def genRotLib(self, cutoff):
 
@@ -310,7 +316,7 @@ class RotamerClusters(object):
         # Create Universe for the dye+linker trajectory
         if self.traj_extension == 'xtc':
             u = MDAnalysis.Universe(self.libpath + self.dye + '/conf_ed.gro', self.libpath + self.dye + '/traj.xtc')
-            
+
         if self.traj_extension == 'dcd':
             u = MDAnalysis.Universe(self.libpath + self.dye + '/conf_ed.gro', self.libpath + self.dye + '/traj.dcd')
 
@@ -434,7 +440,7 @@ class RotamerClusters(object):
         # Plot
         sns.set_style('darkgrid')
 
-        fig, axes = plt.subplots(nrows=np.round(num_dihedrals/3).astype(int), ncols=3,
+        fig, axes = plt.subplots(nrows=np.round(num_dihedrals / 3).astype(int), ncols=3,
                                  sharex=True, sharey=True, figsize=(9, 6))
 
         for i, ax in enumerate(axes.flatten()):
@@ -458,7 +464,7 @@ class RotamerClusters(object):
 
             ax.set_ylim(0, h.max() + 0.01)
 
-            ax.set_title("$\chi_" + '{' + f'{i+1}' +'}$')
+            ax.set_title("$\chi_" + '{' + f'{i + 1}' + '}$')
 
         # Set labels and titles
         for i in list(range(2, num_dihedrals, 3)) + list(range(0, num_dihedrals, 3)):
@@ -509,7 +515,7 @@ class RotamerClusters(object):
         # Plot
         sns.set_style('darkgrid')
 
-        fig, axes = plt.subplots(np.round(num_dihedrals/3).astype(int), 3,
+        fig, axes = plt.subplots(np.round(num_dihedrals / 3).astype(int), 3,
                                  sharex=False, sharey=False, subplot_kw=dict(polar=True), figsize=(9, 7))
 
         for i, ax in enumerate(axes.flatten()):
@@ -535,7 +541,7 @@ class RotamerClusters(object):
 
             # Plot settings
             ax.set_xticks(np.arange(0, 2 * np.pi, np.pi / 2))
-            ax.set_title("$\chi_" + '{' + f'{i+1}' +'}$')
+            ax.set_title("$\chi_" + '{' + f'{i + 1}' + '}$')
             ax.set_yticks([])
             ax.grid(False)
 
@@ -574,22 +580,17 @@ class RotamerClusters(object):
             # Filter C2 cluster centers for population, generate cluster centers C3,
             # save generated rotamer libraries.
             for _, co in enumerate(self.cutoff):
-            
+
                 try:
-                
+
                     print(f"\nFiltering cluster centers...")
                     self.filterCluster(co)
-                    
+
                     print("\nGenerating rotamer library...")
                     self.genRotLib(co)
-                    
+
                     print('Done.\n')
-                	
-                except:
-                
+
+                except ValueError:
+
                     print(f'\nCould not generate rotamer library for cutoff {co}')
-
-                
-            
-
-
