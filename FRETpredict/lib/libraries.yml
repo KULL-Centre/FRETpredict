@@ -403,6 +403,23 @@ AlexaFluor 647 L1R:
   - N2 and resname A64
   r:
   - C29 and resname A64
+CF 660 C2R:
+  author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: https://doi.org/10.1101/2023.01.27.525885
+  filename: CF660_C2R_cutoff10
+  licence: GPLv3
+  mu:
+  - C25
+  - C30
+  negative:
+  - SC1
+  - SC2
+  - SC3
+  positive:
+  - NC2
+  - NC3
+  r:
+  - C13
 Lumiprobe Cy3 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: https://doi.org/10.1101/2023.01.27.525885
@@ -418,6 +435,20 @@ Lumiprobe Cy3 C2R:
   - N1B
   r:
   - CX2
+Lumiprobe Cy3b C2R:
+  author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
+  citation: https://doi.org/10.1101/2023.01.27.525885
+  filename: Cy3b_C2R_cutoff10
+  licence: GPLv3
+  mu:
+  - C14
+  - C31
+  negative:
+  - SC
+  positive:
+  - NC2
+  r:
+  - C24
 Lumiprobe Cy5 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: https://doi.org/10.1101/2023.01.27.525885
