@@ -39,9 +39,13 @@ The `lib/libraries.yml` file lists all the available Rotamer Libraries, along wi
 - ATTO 488 C3R (`T48 C3R`)
 - ATTO Thio12 C3R (`Tth C3R`)
 
-- Lumiprobe Cy3 C2R (`C3N C2R`)
+- Lumiprobe Cy3 C2R (`C3N C2R`, `CY3 C2R` from __[HandyFRET](https://karri.anu.edu.au/handy/rl.html)__)
+- Lumiprobe Cy3b C2R (`Cy3b C2R` from __[Klose et al.](https://doi.org/10.1016/j.bpj.2021.09.021)__)
+- Lumiprobe Cy5 C2R (`CY5 C2R` from __[HandyFRET](https://karri.anu.edu.au/handy/rl.html)__)
 - Lumiprobe Cy5.5 C2R + L1R (`C55 C2R`, `C55 L1R`)
 - Lumiprobe Cy7.5 L1R (`C75 L1R`)
+
+- CF 660R C2R (`CF660 C2R` from __[Klose et al.](https://doi.org/10.1016/j.bpj.2021.09.021)__)
 
 In the absence of the exact probes, accurate trends can be predicted by (i) choosing rotamer libraries with similar structural characteristics (linker length, linker dihedrals, fluorophore structure) and (ii) manually setting the $R_0$ for the experimental pair of dyes.
 
@@ -73,6 +77,8 @@ Testing
 
   python -m pytest
 ```
+The tests reproduce reference data for the following protein systems:
+- Hsp90
 
 Code Example
 ------------
