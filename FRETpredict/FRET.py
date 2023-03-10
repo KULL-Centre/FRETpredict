@@ -591,6 +591,8 @@ class FRETpredict(Operations):
                                self.weightedAvgSDSE(edynamic2[np.isfinite(k2)], self.weights[np.isfinite(k2)])],
                               columns=['Average', 'SD', 'SE'], index=['k2', 'Estatic', 'Edynamic1', 'Edynamic2'])
 
+        print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
+
         # Save DataFrame in pickle format
         df.to_pickle(output_reweight_prefix + '-data-{:d}-{:d}.pkl'.format(self.residues[0], self.residues[1]))
         
@@ -625,20 +627,17 @@ class FRETpredict(Operations):
         
         self.save(reweight_prefix=output_reweight_prefix)
 
-    def run(self, **kwargs):
+    def run(self):
 
         """
 
         Run FRET Efficiency calculations by calling trajectoryAnalysis() and save data to file.
-        
 
         """
 
         # Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in Static, Dynamic1, and
         # Dynamic2 regimes.
         self.trajectoryAnalysis()
-            
-        print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
 
         # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
         self.save()
