@@ -622,8 +622,6 @@ class FRETpredict(Operations):
 
             self.weights = (dye_protein_weights * user_weights) / np.linalg.norm(dye_protein_weights * user_weights,
                                                                                  ord=1)
-
-        print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
         
         self.save(reweight_prefix=output_reweight_prefix)
 
