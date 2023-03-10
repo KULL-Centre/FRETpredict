@@ -26,22 +26,26 @@ The program generates the pickle file named `E_pp11-data-0-12.pkl` which can be 
 
 ### Reweighting
 
-Here is how to reweight the trajectory by per-frame weights. 
+Here is how to reweight the trajectory by per-frame dye-protein weights. 
 ~~~ python
 FRET.reweight(reweight_prefix='E_pp11_reweighted')
+~~~
+and combine the with user-provided weights from previous calculations (e.g., Enhanced sampling simulations)
+~~~ python
+FRET.reweight(reweight_prefix='E_pp11_reweighted', user_weights=user_weights_pp11)
 ~~~
 
 This generates the pickle file named `E_pp11_reweighted-data-0-12.pkl` with all the reweighted parameters, which can be loaded as a pandas DataFrame.
 
-In this other example, we can directly obtain the reweighted FRET efficiencies using custom pre-computed weights, which are passed as a numpy array to the `weights` attribute in the `FRETpredict` class.
+In this other example, we can directly obtain the reweighted FRET efficiencies combining the dye-protein weights with custom pre-computed weights, which are passed as a numpy array to the `user_weights` attribute in the `FRETpredict` class.
 
 ~~~ python
-weights_pp11 = np.load('weights_pp11.npy')
+user_weights_pp11 = np.load('user_weights_pp11.npy')
 
 FRET = FRETpredict(protein=u, residues=[0, 12], chains=['A', 'A'], temperature=298, 
                    donor='AlexaFluor 488', acceptor='AlexaFluor 594', electrostatic=True,
                    libname_1=f'AlexaFluor 488 C1R cutoff10',
                    libname_2=f'AlexaFluor 594 C1R cutoff10',  
-                   weights=weights_pp11,
+                   user_weights=user_weights_pp11,
                    output_prefix='E_pp11_reweighted')
 ~~~

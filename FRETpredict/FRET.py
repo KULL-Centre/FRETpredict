@@ -79,6 +79,9 @@ class FRETpredict(Operations):
         weights: numpy.array
             Boltzmann factors distribution
 
+        user_weights: numpy.array
+            User-provided per-frame weights
+
         stdev: float
             Standard deviation
 
@@ -142,6 +145,7 @@ class FRETpredict(Operations):
         self.output_prefix = kwargs.get('output_prefix', 'res')
         self.load_file = kwargs.get('load_file', False)
         self.weights = kwargs.get('weights', False)
+        self.user_weights = kwargs.get('user_weights', None)
         self.stdev = kwargs.get('filter_stdev', 0.02)
 
         # Logging set up
@@ -159,7 +163,7 @@ class FRETpredict(Operations):
             # Logging information on the selected residues
             logging.info('{:s} = {:s}'.format(residue_sel, self.protein.select_atoms(residue_sel).atoms.resnames[0]))
 
-        # Raise error if the specified placement residues are different than two
+        # Raise error if the specified placement residues are different from two
         if len(residues) != 2:
             raise ValueError("The residue_list must contain exactly 2 "
                              "residue numbers: current value {0}.".format(residues))
@@ -479,7 +483,7 @@ class FRETpredict(Operations):
 
         """
 
-        Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging, with or without reweighting. Save data to file.
+        Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging, with or without reweighting.    Save data to file.
 
         """
 
@@ -488,33 +492,63 @@ class FRETpredict(Operations):
         # Load <k2> distribution from file
         k2 = np.loadtxt(self.output_prefix + '-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
 
-        # Check if weights is an array
-        if isinstance(self.weights, np.ndarray):
+        # Check if user provided per-frame weights
+        # If the user want the average to be unweighted
+        if self.user_weights is None:
 
-            # Check if every k2 instance is associated with one weight
-            if self.weights.size != k2.size:
-                # Warning log
-                logging.info('Weights array has size {} whereas the number of frames is {}'.
-                             format(self.weights.size, k2.size))
+            # Check if weights is an array
+            if isinstance(self.weights, np.ndarray):
 
-                # Raise error
-                raise ValueError('Weights array has size {} whereas the number of frames is {}'.
+                # Check if user_weights size corresponds to the total number of frames
+                if self.weights.size != k2.size:
+
+                    # Warning log
+                    logging.info('Weights array has size {} whereas the number of frames is {}'.
                                  format(self.weights.size, k2.size))
 
-        # If we want the average to be unweighted
-        elif self.weights == False:
+                    # Raise error
+                    raise ValueError('Weights array has size {} whereas the number of frames is {}'.
+                                     format(self.weights.size, k2.size))
 
-            # Associate every k2 instance with a unitary weight
-            self.weights = np.ones(k2.size)
+            # If we want the average to be unweighted
+            elif not self.weights:
 
-        # Other options will raise errors
-        else:
+                # Associate every k2 instance with a unitary weight
+                self.weights = np.ones(k2.size)
 
-            # Warning log
-            logging.info('Weights argument should be a numpy array')
+        # If the user provided per-frame weights
+        elif self.user_weights is not None:
 
-            # Raise error
-            raise ValueError('Weights argument should be a numpy array')
+            # Check if user_weights is an array
+            if isinstance(self.user_weights, np.ndarray):
+
+                # Check if user_weights size corresponds to the total number of frames
+                if self.user_weights.size != k2.size:
+
+                    # Warning log
+                    logging.info('User weights array has size {} whereas the number of frames is {}'.
+                                 format(self.user_weights.size, k2.size))
+
+                    # Raise error
+                    raise ValueError('User weights array has size {} whereas the number of frames is {}'.
+                                     format(self.user_weights.size, k2.size))
+
+                # Obtain dye-protein weights from FRETpredict calculations
+                dye_protein_weights = np.genfromtxt(
+                        self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+
+                # Combine dye-protein weights with user provided weights
+                self.weights = (dye_protein_weights * self.user_weights) / np.linalg.norm(
+                        dye_protein_weights * self.user_weights, ord=1)
+
+            # Other options will raise errors
+            else:
+
+                # Warning log
+                logging.info('User weights argument should be a numpy array')
+
+                # Raise error
+                raise ValueError('User weights argument should be a numpy array')
 
         # Read data from H5PY file
         f = h5py.File(self.output_prefix + '-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "r")
@@ -557,6 +591,8 @@ class FRETpredict(Operations):
                                self.weightedAvgSDSE(edynamic2[np.isfinite(k2)], self.weights[np.isfinite(k2)])],
                               columns=['Average', 'SD', 'SE'], index=['k2', 'Estatic', 'Edynamic1', 'Edynamic2'])
 
+        print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
+
         # Save DataFrame in pickle format
         df.to_pickle(output_reweight_prefix + '-data-{:d}-{:d}.pkl'.format(self.residues[0], self.residues[1]))
         
@@ -564,34 +600,42 @@ class FRETpredict(Operations):
         
         """ 
         
-        Alias for reweigthing calculations. Call save() function with weights for reweighting.
+        Alias for reweighting calculations. Call save() function with weights for reweighting.
         
         """
-        
+
         output_reweight_prefix = kwargs.get('reweight_prefix', self.output_prefix)
-        
-        self.weights = np.genfromtxt(
+
+        # User-provided per-frame weights
+        user_weights = kwargs.get('user_weights', None)
+
+        # Dye-protein weights from FRETpredict calculations
+        dye_protein_weights = np.genfromtxt(
                 self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
 
-        print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
+        # Normalized per-frame weights combining dye-protein and user provided weights
+        if user_weights is None:
+
+            self.weights = dye_protein_weights
+
+        elif user_weights is not None:
+
+            self.weights = (dye_protein_weights * user_weights) / np.linalg.norm(dye_protein_weights * user_weights,
+                                                                                 ord=1)
         
         self.save(reweight_prefix=output_reweight_prefix)
-        
-        
-    def run(self, **kwargs):
+
+    def run(self):
 
         """
 
         Run FRET Efficiency calculations by calling trajectoryAnalysis() and save data to file.
-        
 
         """
 
         # Calculate distribution of <E> (i.e. one <E> for each protein trajectory frame) in Static, Dynamic1, and
         # Dynamic2 regimes.
         self.trajectoryAnalysis()
-            
-        print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
 
         # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
         self.save()

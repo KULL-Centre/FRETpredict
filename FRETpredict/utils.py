@@ -505,13 +505,20 @@ class Operations(object):
         """ Compute effective fraction of frames contributing to the averages """
         
         if isinstance(self.weights, np.ndarray):
+
+            if np.array_equal(self.weights, np.ones(len(self.protein.trajectory))):
+
+                w_s = np.genfromtxt(
+                    self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
         
-        	w_s = self.weights
+            else:
+
+                w_s = self.weights
+
+        elif not self.weights:
         
-        elif self.weights == False:
-        
-        	w_s = np.genfromtxt(
-        	self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
+            w_s = np.genfromtxt(
+                self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
 
         ws_correct = w_s[w_s != 0]
         ws_0 = np.zeros(len(ws_correct))
