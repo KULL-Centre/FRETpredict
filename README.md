@@ -1,5 +1,9 @@
 [![Documentation Status](https://readthedocs.org/projects/fretpredict/badge/?version=latest)](https://fretpredict.readthedocs.io/en/latest/?badge=latest)
 
+<p align="center">
+  <img src="FRETpredict_logo.png" />
+</p>
+
 FRETpredict
 ===========
 

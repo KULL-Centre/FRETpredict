@@ -5,6 +5,10 @@ MathJax.Hub.Config({
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
 
+<p align="center">
+  <img src="../../FRETpredict_logo.png" />
+</p>
+
 # Introduction
 
 FRETpredict is a software for the prediction of Förster Resonance Energy Transfer (FRET) efficiencies from protein conformational ensembles, using the Rotamer Library Approach (RLA).
