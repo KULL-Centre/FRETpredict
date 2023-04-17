@@ -1,7 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/fretpredict/badge/?version=latest)](https://fretpredict.readthedocs.io/en/latest/?badge=latest)
 
 <p align="center">
-  <img src="FRETpredict_logo.png" width="100" />
+  <img src="FRETpredict_logo.png" width="600" />
 </p>
 
 FRETpredict
