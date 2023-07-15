@@ -18,7 +18,7 @@ import re
 
 # Inner imports
 from .utils import Operations
-
+from .libraries import *
 
 class FRETpredict(Operations):
     """
@@ -102,7 +102,7 @@ class FRETpredict(Operations):
 
         save:
             Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging, with or without reweighting. Save data to file.
-            
+
         reweight:
             Alias for reweigthing calculations. Call save() function with weights for reweighting.
 
@@ -283,16 +283,16 @@ class FRETpredict(Operations):
         acceptor_number = temp.match(self.acceptor).groups()[1]
 
         # Read donor spectrum from file and normalize max value to 1
-        donor_spectrum = pd.read_csv(f'{self.r0lib}/{donor_producer}{donor_number}.csv')
+        donor_spectrum = pd.read_csv(find_file(f'{donor_producer}{donor_number}.csv',pkglibdir=self.r0lib))
         donor_spectrum[['Emission', 'Excitation']] = donor_spectrum[['Emission', 'Excitation']] / 100
 
         # Read acceptor spectrum from file and normalize max value to 1
-        acceptor_spectrum = pd.read_csv(f'{self.r0lib}/{acceptor_producer}{acceptor_number}.csv')
+        acceptor_spectrum = pd.read_csv(find_file(f'{acceptor_producer}{acceptor_number}.csv',pkglibdir=self.r0lib))
         acceptor_spectrum[['Emission', 'Excitation']] = acceptor_spectrum[['Emission', 'Excitation']] / 100
 
         # Quantum yield and extinction coefficient data for the chromophores
-        chromophore_data = pd.read_csv(f'{self.r0lib}/Dyes_extinction_QD.csv', delimiter=',', on_bad_lines='skip',
-                                       names=['Type', 'Chromophore', 'Ext_coeff', 'QD'])
+        chromophore_data = pd.read_csv(find_file('Dyes_extinction_QD.csv',pkglibdir=self.r0lib),delimiter=',',
+                                       on_bad_lines='skip',names=['Type', 'Chromophore', 'Ext_coeff', 'QD'])
 
         # R0 calculation parameters
         # Initial factor, for R0 expressed in nm
@@ -361,7 +361,7 @@ class FRETpredict(Operations):
 
         for frame_ndx, _ in enumerate(self.protein.trajectory):
 
-            print(f'\nFrame {frame_ndx + 1}/{len(self.protein.trajectory)}')
+            print(f'{frame_ndx + 1}/{len(self.protein.trajectory)}',end='-')
 
             # Fit the rotamers onto the protein
             # Each protein structure (i.e. trajectory frame) has m conformations for chromophore 1 and l conformations
@@ -595,13 +595,13 @@ class FRETpredict(Operations):
 
         # Save DataFrame in pickle format
         df.to_pickle(output_reweight_prefix + '-data-{:d}-{:d}.pkl'.format(self.residues[0], self.residues[1]))
-        
+
     def reweight(self, **kwargs):
-        
-        """ 
-        
+
+        """
+
         Alias for reweighting calculations. Call save() function with weights for reweighting.
-        
+
         """
 
         output_reweight_prefix = kwargs.get('reweight_prefix', self.output_prefix)
@@ -622,7 +622,7 @@ class FRETpredict(Operations):
 
             self.weights = (dye_protein_weights * user_weights) / np.linalg.norm(dye_protein_weights * user_weights,
                                                                                  ord=1)
-        
+
         self.save(reweight_prefix=output_reweight_prefix)
 
     def run(self):

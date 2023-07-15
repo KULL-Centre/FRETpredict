@@ -493,7 +493,7 @@ class Operations(object):
         Z = np.genfromtxt(self.output_prefix + '-Z-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
                           skip_header=-1,
                           skip_footer=0,
-                          delimiter=' ')
+                          delimiter=' ').reshape(-1,2)
 
         Z_s = Z[:, 0] * Z[:, 1]
         w_s = Z_s / np.sum(Z_s)
@@ -503,20 +503,20 @@ class Operations(object):
     def fraction_frames(self):
 
         """ Compute effective fraction of frames contributing to the averages """
-        
+
         if isinstance(self.weights, np.ndarray):
 
             if np.array_equal(self.weights, np.ones(len(self.protein.trajectory))):
 
                 w_s = np.genfromtxt(
                     self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
-        
+
             else:
 
                 w_s = self.weights
 
         elif not self.weights:
-        
+
             w_s = np.genfromtxt(
                 self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
 
