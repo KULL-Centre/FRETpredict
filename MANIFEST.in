@@ -1,2 +1,3 @@
 include README.md
 include FRETpredict/lib/*
+include FRETpredict/lib/R0/*
