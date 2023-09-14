@@ -15,6 +15,8 @@ import h5py
 import logging
 import MDAnalysis
 import re
+from time import sleep
+from progress.bar import Bar
 
 # Inner imports
 from .utils import Operations
@@ -302,12 +304,12 @@ class FRETpredict(Operations):
         n4 = 1.4 ** 4
 
         # Quantum yield of the donor in the acceptor absence
-        QD = float(chromophore_data['QD'].loc[(chromophore_data['Chromophore'] == donor_number) &
-                                              (chromophore_data['Type'] == donor_producer)])
+        QD = chromophore_data['QD'].loc[(chromophore_data['Chromophore'] == donor_number) &
+                                            (chromophore_data['Type'] == donor_producer)].values.astype(float)
 
         # Extinction coefficient of the acceptor at its peak absorption value (= max value)
-        ext_coeff_max = float(chromophore_data['Ext_coeff'].loc[(chromophore_data['Chromophore'] == acceptor_number) &
-                                                                (chromophore_data['Type'] == acceptor_producer)])
+        ext_coeff_max = chromophore_data['Ext_coeff'].loc[(chromophore_data['Chromophore'] == acceptor_number) &
+                                            (chromophore_data['Type'] == acceptor_producer)].values.astype(float)
 
         # Extinction coefficient spectrum of the acceptor
         ext_coeff_acceptor = (ext_coeff_max * acceptor_spectrum['Excitation']).fillna(0)
@@ -359,96 +361,98 @@ class FRETpredict(Operations):
         allk2 = np.empty(0)
         allZ = np.empty(0)
 
-        for frame_ndx, _ in enumerate(self.protein.trajectory):
+        with Bar('FRET calculation') as bar:
+            for frame_ndx, _ in enumerate(self.protein.trajectory):
 
-            print(f'{frame_ndx + 1}/{len(self.protein.trajectory)}',end='-')
+                #print(f'{frame_ndx + 1}/{len(self.protein.trajectory)}',end='-')
+                bar.next()
 
-            # Fit the rotamers onto the protein
-            # Each protein structure (i.e. trajectory frame) has m conformations for chromophore 1 and l conformations
-            # for chromophore 2
-            rotamersSite1 = self.rotamer_placement(rotamer1, prot_atoms1, self.lib_1)
-            rotamersSite2 = self.rotamer_placement(rotamer2, prot_atoms2, self.lib_2)
+                # Fit the rotamers onto the protein
+                # Each protein structure (i.e. trajectory frame) has m conformations for chromophore 1 and l conformations
+                # for chromophore 2
+                rotamersSite1 = self.rotamer_placement(rotamer1, prot_atoms1, self.lib_1)
+                rotamersSite2 = self.rotamer_placement(rotamer2, prot_atoms2, self.lib_2)
 
-            # Calculate Boltzmann weights based on Lennard-Jones interactions
-            boltz1, z1 = self.rotamerWeights(rotamersSite1, self.lib_1, LJ_data1)
-            boltz2, z2 = self.rotamerWeights(rotamersSite2, self.lib_2, LJ_data2)
+                # Calculate Boltzmann weights based on Lennard-Jones interactions
+                boltz1, z1 = self.rotamerWeights(rotamersSite1, self.lib_1, LJ_data1)
+                boltz2, z2 = self.rotamerWeights(rotamersSite2, self.lib_2, LJ_data2)
 
-            # Calculate normalized Boltzmann weights (combined probability of the two dyes for each frame)
-            boltzmann_weights_norm = (boltz1.reshape(-1, 1) * boltz2).flatten()
+                # Calculate normalized Boltzmann weights (combined probability of the two dyes for each frame)
+                boltzmann_weights_norm = (boltz1.reshape(-1, 1) * boltz2).flatten()
 
-            # Create array of partition function values
-            allZ = np.append(allZ, boltzmann_weights_norm.flatten())
+                # Create array of partition function values
+                allZ = np.append(allZ, boltzmann_weights_norm.flatten())
 
-            # Append Boltzmann partition functions of the two dyes for the frame to the array
-            zarray = np.append(zarray, [z1, z2])
+                # Append Boltzmann partition functions of the two dyes for the frame to the array
+                zarray = np.append(zarray, [z1, z2])
 
-            # Compare Boltzmann partition function with cutoff
-            if (z1 <= self.z_cutoff) or (z2 <= self.z_cutoff):
-                # Warning for Z < Z_cutoff
-                print('\nZ < Z_cutoff')
+                # Compare Boltzmann partition function with cutoff
+                if (z1 <= self.z_cutoff) or (z2 <= self.z_cutoff):
+                    # Warning for Z < Z_cutoff
+                    print('\nZ < Z_cutoff')
 
-                # If Z value < cutoff then create an empty array for k2 values with same dimension as Z array, to save
-                allk2 = np.zeros_like(allZ, dtype=float)
+                    # If Z value < cutoff then create an empty array for k2 values with same dimension as Z array, to save
+                    allk2 = np.zeros_like(allZ, dtype=float)
 
-                # Skip to next iteration
-                continue
-
-            # Calculate vector factors for k2 calculations
-            mu_cosine, r_mu_1, r_mu_2, rdist = self.compute_chromophore_vectors(rotamersSite1, rotamersSite2)
-
-            # Calculate Orientation factor k2 for each donor-acceptor rotamer combination
-            k2 = np.power(mu_cosine - 3 * r_mu_1 * r_mu_2, 2).flatten()
-
-            # Create array of k2 values
-            allk2 = np.append(allk2, k2.flatten())
-
-            # Orientation factor for dynamic averaging is weighted by rotamers probability (Boltzmann weights),
-            # to account for reduced weight of high energy conformations
-
-            # Calculate Average Orientation factor <k2>
-            k2_avg[frame_ndx] = np.dot(k2, boltzmann_weights_norm)
-
-            # Calculate R0 for the donor-acceptor pair, based on computed k2, if R0 calculations are enabled
-            if self.fixed_R0 == False:
-
-                self.calculateR0(k2_avg[frame_ndx])
-
-                # If dyes pair has no spectral overlap, skip iteration
-                if self.r0 == 0:
-
-                    print('\nDyes pair R0 = 0!')
+                    # Skip to next iteration
                     continue
 
-            # Calculate (r/r0)^6 factor for FRET efficiency calculations
-            ratio6 = np.power(rdist / self.r0, 6)
+                # Calculate vector factors for k2 calculations
+                mu_cosine, r_mu_1, r_mu_2, rdist = self.compute_chromophore_vectors(rotamersSite1, rotamersSite2)
 
-            # Calculation of average FRET efficiencies distributions
-            # Static Regime
-            estatic = 1. / (1 + 2 / 3. * np.divide(ratio6, k2))
-            esta_avg[frame_ndx] = np.dot(estatic, boltzmann_weights_norm)
+                # Calculate Orientation factor k2 for each donor-acceptor rotamer combination
+                k2 = np.power(mu_cosine - 3 * r_mu_1 * r_mu_2, 2).flatten()
 
-            # Dynamic1 Regime
-            edynamic = 1. / (1 + 2 / 3. / k2_avg[frame_ndx] * ratio6)
-            edyn1_avg[frame_ndx] = np.dot(edynamic, boltzmann_weights_norm)
+                # Create array of k2 values
+                allk2 = np.append(allk2, k2.flatten())
 
-            # Dynamic2 Regime
-            A_avg = np.dot(3. / 2. * k2 / ratio6, boltzmann_weights_norm)
-            edyn2_avg[frame_ndx] = A_avg / (A_avg + 1)
+                # Orientation factor for dynamic averaging is weighted by rotamers probability (Boltzmann weights),
+                # to account for reduced weight of high energy conformations
 
-            # Calculate normalized rdist between 0 and 1
-            rdist = np.round((self.nr * (rdist - self.rmin)) / (self.rmax - self.rmin)).astype(int).flatten()
+                # Calculate Average Orientation factor <k2>
+                k2_avg[frame_ndx] = np.dot(k2, boltzmann_weights_norm)
 
-            # Calculate weighted distribution of center-to-center distances between the two chromophores
-            distribution = np.bincount(rdist, weights=boltzmann_weights_norm.flatten(), minlength=self.rax.size)
+                # Calculate R0 for the donor-acceptor pair, based on computed k2, if R0 calculations are enabled
+                if self.fixed_R0 == False:
 
-            # Write the calculated distribution for each frame in the H5PY dataset
-            try:
+                    self.calculateR0(k2_avg[frame_ndx])
 
-                distributions[frame_ndx] = distribution
+                    # If dyes pair has no spectral overlap, skip iteration
+                    if self.r0 == 0:
 
-            except:
+                        print('\nDyes pair R0 = 0!')
+                        continue
 
-                continue
+                # Calculate (r/r0)^6 factor for FRET efficiency calculations
+                ratio6 = np.power(rdist / self.r0, 6)
+
+                # Calculation of average FRET efficiencies distributions
+                # Static Regime
+                estatic = 1. / (1 + 2 / 3. * np.divide(ratio6, k2))
+                esta_avg[frame_ndx] = np.dot(estatic, boltzmann_weights_norm)
+
+                # Dynamic1 Regime
+                edynamic = 1. / (1 + 2 / 3. / k2_avg[frame_ndx] * ratio6)
+                edyn1_avg[frame_ndx] = np.dot(edynamic, boltzmann_weights_norm)
+
+                # Dynamic2 Regime
+                A_avg = np.dot(3. / 2. * k2 / ratio6, boltzmann_weights_norm)
+                edyn2_avg[frame_ndx] = A_avg / (A_avg + 1)
+
+                # Calculate normalized rdist between 0 and 1
+                rdist = np.round((self.nr * (rdist - self.rmin)) / (self.rmax - self.rmin)).astype(int).flatten()
+
+                # Calculate weighted distribution of center-to-center distances between the two chromophores
+                distribution = np.bincount(rdist, weights=boltzmann_weights_norm.flatten(), minlength=self.rax.size)
+
+                # Write the calculated distribution for each frame in the H5PY dataset
+                try:
+
+                    distributions[frame_ndx] = distribution
+
+                except:
+
+                    continue
 
         # Close H5PY file
         f.close()

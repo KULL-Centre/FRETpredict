@@ -13,3 +13,4 @@ recommonmark
 sphinx_rtd_theme
 sphinx-math-dollar
 sphinx-markdown-tables
+progress
