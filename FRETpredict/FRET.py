@@ -389,7 +389,7 @@ class FRETpredict(Operations):
                 # Compare Boltzmann partition function with cutoff
                 if (z1 <= self.z_cutoff) or (z2 <= self.z_cutoff):
                     # Warning for Z < Z_cutoff
-                    print('\nZ < Z_cutoff')
+                    #print('\nZ < Z_cutoff')
 
                     # If Z value < cutoff then create an empty array for k2 values with same dimension as Z array, to save
                     allk2 = np.zeros_like(allZ, dtype=float)
