@@ -423,7 +423,7 @@ CF 660 C2R:
 Lumiprobe Cy3 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
   citation: https://doi.org/10.1101/2023.01.27.525885
-  filename: Cy3_C2R_cutoff10
+  filename: Cy3_C2R_cutoff0
   licence: GPLv3
   mu:
   - C4AM
