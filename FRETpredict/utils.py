@@ -6,7 +6,6 @@ from .libraries import *
 
 
 class Operations(object):
-
     """
 
     Utility functions for the Calculation of the distance profile between a probe and backbone amide.
@@ -306,10 +305,10 @@ class Operations(object):
         universe.load_new(probe_coords, format=MemoryReader, order='afc')
 
         # Save aligned rotamers
-        #rotamers = universe.select_atoms("all")
-        #with MDAnalysis.Writer(lib.name + ".pdb", rotamers.n_atoms) as W:
-        #    for ts in universe.trajectory:
-        #        W.write(rotamers)
+        rotamers = universe.select_atoms("all")
+        with MDAnalysis.Writer(lib.name + ".pdb", rotamers.n_atoms) as W:
+            for ts in universe.trajectory:
+                W.write(rotamers)
 
         return universe
 
@@ -359,7 +358,6 @@ class Operations(object):
 
             # Electrostatic energy contribution (Debye-Huckel)
             if self.electrostatic:
-
                 # Define cutoff for the interaction (2 charged atoms within 20 Å)
                 cutoff = (q_ij != 0) & (d < 20)
 
@@ -371,7 +369,6 @@ class Operations(object):
 
             # Potential energy contribution (Lennard-Jones)
             if self.potential == 'lj':
-
                 # Define cutoff for the interaction (2 atoms within 10 Å)
                 cutoff = d < 10
 
@@ -383,7 +380,6 @@ class Operations(object):
 
             # Potential energy contribution (Gaussian)
             if self.potential == 'gauss':
-
                 # Define cutoff for the interaction (2 atoms within 10 Å)
                 cutoff = d < 10
 
@@ -493,10 +489,17 @@ class Operations(object):
         Z = np.genfromtxt(self.output_prefix + '-Z-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
                           skip_header=-1,
                           skip_footer=0,
-                          delimiter=' ').reshape(-1,2)
+                          delimiter=' ')
 
-        Z_s = Z[:, 0] * Z[:, 1]
-        w_s = Z_s / np.sum(Z_s)
+        # Check if single-frame structure                  
+        if np.shape(Z) == (2,):
+
+            w_s = np.array([1.0])
+
+        else:
+
+            Z_s = Z[:, 0] * Z[:, 1]
+            w_s = Z_s / np.sum(Z_s)
 
         return w_s
 
