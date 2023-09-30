@@ -404,9 +404,9 @@ AlexaFluor 647 L1R:
   r:
   - C29 and resname A64
 CF 660 C2R:
-  author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: https://doi.org/10.1101/2023.01.27.525885
-  filename: CF660_C2R_cutoff10
+  author: Klose, Holla, Gmeiner, Nettels, Ritsch, Bross, Yulikov, Allain, Schuler, and Jeschke
+  citation: https://doi.org/10.1016/j.bpj.2021.09.021
+  filename: CF660_C2R_MMM
   licence: GPLv3
   mu:
   - C25
@@ -421,9 +421,9 @@ CF 660 C2R:
   r:
   - C13
 Lumiprobe Cy3 C2R:
-  author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: https://doi.org/10.1101/2023.01.27.525885
-  filename: Cy3_C2R_cutoff00
+  author: Walczewska-Szewc and Ben Corry
+  citation: https://doi.org/10.1039/C4CP01222D
+  filename: Cy3_C2R_HandyFRET
   licence: GPLv3
   mu:
   - C4AM
@@ -436,9 +436,9 @@ Lumiprobe Cy3 C2R:
   r:
   - CX2
 Lumiprobe Cy3b C2R:
-  author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: https://doi.org/10.1101/2023.01.27.525885
-  filename: Cy3b_C2R_cutoff10
+  author: Klose, Holla, Gmeiner, Nettels, Ritsch, Bross, Yulikov, Allain, Schuler, and Jeschke
+  citation: https://doi.org/10.1016/j.bpj.2021.09.021
+  filename: Cy3b_C2R_MMM
   licence: GPLv3
   mu:
   - C14
@@ -450,9 +450,9 @@ Lumiprobe Cy3b C2R:
   r:
   - C24
 Lumiprobe Cy5 C2R:
-  author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: https://doi.org/10.1101/2023.01.27.525885
-  filename: Cy5_C2R_cutoff10
+  author: Walczewska-Szewc and Ben Corry
+  citation: https://doi.org/10.1039/C4CP01222D
+  filename: Cy5_C2R_HandyFRET
   licence: GPLv3
   mu:
   - C4AM
