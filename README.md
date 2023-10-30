@@ -24,7 +24,12 @@ In FRETpredict, rotamer libraries are created through the following steps: (i) g
 
 The `lib/libraries.yml` file lists all the available Rotamer Libraries, along with necessary fluorophore information, including atom indices for calculating transition dipole moments and distances between fluorophores.
 
-If you use the rotamer libraries for Cy3 C2R and Cy5 C2R, please cite [Walczewska-Szewc and Corry (2014)](https://doi.org/10.1039/C4CP01222D). If you use the rotamer libraries for Cy3b C2R and CF660 C2R, please cite [Klose et al. (2021)](https://doi.org/10.1016/j.bpj.2021.09.021). 
+<!---
+If you use the rotamer libraries for Cy3 C2R and Cy5 C2R, please cite [Walczewska-Szewc and Corry (2014)](https://doi.org/10.1039/C4CP01222D). 
+- Lumiprobe Cy3 C2R (`C3N C2R`, `CY3 C2R` from __[HandyFRET](https://karri.anu.edu.au/handy/rl.html)__)
+- Lumiprobe Cy5 C2R (`CY5 C2R` from __[HandyFRET](https://karri.anu.edu.au/handy/rl.html)__)
+--->
+If you use the rotamer libraries for Cy3b C2R and CF660 C2R, please cite [Klose et al. (2021)](https://doi.org/10.1016/j.bpj.2021.09.021). 
 
 #### Currently available Rotamer Libraries
 - AlexaFluor 350 C1R + L1R (`A35 C1R`, `A35 L1R`)
@@ -43,9 +48,7 @@ If you use the rotamer libraries for Cy3 C2R and Cy5 C2R, please cite [Walczewsk
 - ATTO 488 C3R (`T48 C3R`)
 - ATTO Thio12 C3R (`Tth C3R`)
 
-- Lumiprobe Cy3 C2R (`C3N C2R`, `CY3 C2R` from __[HandyFRET](https://karri.anu.edu.au/handy/rl.html)__)
 - Lumiprobe Cy3b C2R (`Cy3b C2R` from __[MMM](https://github.com/gjeschke/MMM)__)
-- Lumiprobe Cy5 C2R (`CY5 C2R` from __[HandyFRET](https://karri.anu.edu.au/handy/rl.html)__)
 - Lumiprobe Cy5.5 C2R + L1R (`C55 C2R`, `C55 L1R`)
 - Lumiprobe Cy7.5 L1R (`C75 L1R`)
 
