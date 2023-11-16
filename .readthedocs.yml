@@ -2,7 +2,8 @@ version: 2
 
 build:
   os: ubuntu-22.04
-  image: latest
+  tools:
+    python: "3.7"
 
 sphinx:
   builder: html
@@ -13,6 +14,5 @@ sphinx:
   configuration: docs/conf.py
 
 python:
-  version: 3.7
   install:
     - requirements: ./requirements.txt
