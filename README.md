@@ -74,7 +74,7 @@ or clone the repo and install locally:
   pip install -e . 
 ```
 
-The software requires Python 3.6+.
+The software requires Python 3.6-3.9.
 
 Testing
 -------
@@ -84,8 +84,8 @@ Testing
 
   python -m pytest
 ```
-The tests reproduce reference data for the following protein systems:
-- Hsp90
+The tests reproduce internal reference data for the following protein systems:
+- Hsp90 from [MDA](https://www.singlemolecule.uni-freiburg.de/software/structure), [DOI: 10.1038/nmeth.4081](http://dx.doi.org/10.1038/nmeth.4081)
 
 Code Example
 ------------

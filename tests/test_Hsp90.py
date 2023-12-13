@@ -25,10 +25,10 @@ def test_Hsp90_R0_calculation():
 
     # Run FRETpredict calculations
     FRET.run()
-#     "Cannot calculate FRET Efficiency with explicit R0 calculation"
 
     # Read computed data from file
-    assert pd.read_pickle('tests/test_systems/Hsp90/output/E30-data-452-637.pkl')['Estatic'] != np.nan,  \
+    print(pd.read_pickle('tests/test_systems/Hsp90/output/E30-data-452-637.pkl')['Estatic'])
+    assert np.abs(pd.read_pickle('tests/test_systems/Hsp90/output/E30-data-452-637.pkl')['Estatic'] - 0.467) < 1e-3,  \
     "Could not read FRET data from file (explicit R0 calculations)"
 
 # Test with single frame, fixed R0 value
@@ -47,10 +47,10 @@ def test_Hsp90_fixed_R0():
 
     # Run FRETpredict calculations
     FRET_fixedR0.run()
-#     "Cannot calculate FRET Efficiency with fixed R0"
 
     # Read computed data from file
-    assert pd.read_pickle('tests/test_systems/Hsp90/output/E30_fixedR0-data-452-637.pkl')['Estatic'] != np.nan,  \
+    print(pd.read_pickle('tests/test_systems/Hsp90/output/E30_fixedR0-data-452-637.pkl')['Estatic'])
+    assert np.abs(pd.read_pickle('tests/test_systems/Hsp90/output/E30_fixedR0-data-452-637.pkl')['Estatic'] - 0.538) < 1e-3,  \
     "Could not read FRET data from file (fixed R0)"
 
 
