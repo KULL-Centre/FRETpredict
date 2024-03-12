@@ -1,4 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/fretpredict/badge/?version=latest)](https://fretpredict.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/fretpredict/badge/?version=latest)](https://fretpredict.readthedocs.io/latest/?badge=latest)
 [![DOI:10.1101/2023.01.27.525885](http://img.shields.io/badge/DOI-10.1101/2023.01.27.525885-B31B1B.svg)](https://doi.org/10.1101/2023.01.27.525885)
 
 <br />
