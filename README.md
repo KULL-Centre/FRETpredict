@@ -1,5 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/fretpredict/badge/?version=latest)](https://fretpredict.readthedocs.io/latest/?badge=latest)
 [![DOI:10.1101/2023.01.27.525885](http://img.shields.io/badge/DOI-10.1101/2023.01.27.525885-B31B1B.svg)](https://doi.org/10.1101/2023.01.27.525885)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10573638.svg)](https://doi.org/10.5281/zenodo.10573638)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10371378.svg)](https://doi.org/10.5281/zenodo.10371378)
 
 <br />
 <p align="left">
@@ -8,7 +10,7 @@
 Overview
 --------
 
-__[FRETpredict](https://doi.org/10.1101/2023.01.27.525885)__ is a Python package based on the Rotamer Library Approach (RLA) for calculating FRET efficiency based on protein conformational ensembles and MD trajectories.
+__[FRETpredict](https://doi.org/10.1038/s42003-024-05910-6)__ is a Python package based on the Rotamer Library Approach (RLA) for calculating FRET efficiency based on protein conformational ensembles and MD trajectories.
 
 The FRETpredict class is initialized with (i) a protein structure or trajectory (provided as `MDAnalysis Universe` objects), (ii) the residue indices to which the fluorescent probes are attached, and (iii) the rotamer libraries for the fluorophores and linkers to be used in the calculation.
 
@@ -123,6 +125,8 @@ and combine user-provided weights from previous calculations (e.g., Enhanced sam
 FRET.reweight(reweight_prefix='E_pp11_reweighted', user_weights=user_weights_pp11)
 
 ```
+
+Further examples can be found at [github.com/KULL-Centre/_2023_Montepietra_FRET](https://github.com/KULL-Centre/_2023_Montepietra_FRET).
 
 Tutorials
 ---------
