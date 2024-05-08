@@ -403,10 +403,10 @@ AlexaFluor 647 L1R:
   - N2 and resname A64
   r:
   - C29 and resname A64
-CF 660 C2R:
+CF 660R C2R:
   author: Klose, Holla, Gmeiner, Nettels, Ritsch, Bross, Yulikov, Allain, Schuler, and Jeschke
   citation: https://doi.org/10.1016/j.bpj.2021.09.021
-  filename: CF660_C2R_cutoff10
+  filename: CF660R_C2R_cutoff10
   licence: GPLv3
   mu:
   - C25

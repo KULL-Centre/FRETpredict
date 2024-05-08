@@ -31,7 +31,7 @@ If you use the rotamer libraries for Cy3 C2R and Cy5 C2R, please cite [Walczewsk
 - Lumiprobe Cy3 C2R (`C3N C2R`, `CY3 C2R` from __[HandyFRET](https://karri.anu.edu.au/handy/rl.html)__)
 - Lumiprobe Cy5 C2R (`CY5 C2R` from __[HandyFRET](https://karri.anu.edu.au/handy/rl.html)__)
 --->
-If you use the rotamer libraries for Cy3b C2R and CF660 C2R, please cite [Klose et al. (2021)](https://doi.org/10.1016/j.bpj.2021.09.021). 
+If you use the rotamer libraries for Cy3b C2R and CF660R C2R, please cite [Klose et al. (2021)](https://doi.org/10.1016/j.bpj.2021.09.021). 
 
 #### Currently available Rotamer Libraries
 - AlexaFluor 350 C1R + L1R (`A35 C1R`, `A35 L1R`)

@@ -102,15 +102,11 @@ class RotamerLibrary(object):
 
         # Make a copy of the library
         try:
-
             self.lib.update(LIBRARIES[self.name])
-
         # No rotamer library found called 'name'
         except KeyError:
-
-            raise ValueError("No rotamer library with name {0} known: must be one of {1}".format(name,
-                                                                                                 list(
-                                                                                                     LIBRARIES.keys())))
+            raise ValueError("No rotamer library with name {0} known: must be one of {1}".format(
+                name, list(LIBRARIES.keys())))
 
         # Print logging information
         logger.info("Using rotamer library '{0}' by {1[author]}".format(self.name, self.lib))
