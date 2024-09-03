@@ -78,6 +78,14 @@ or clone the repo and install locally:
 
 The software requires Python 3.6-3.9.
 
+In case of dependency issues, consider installing FRETpredict in a new environment
+
+```bash
+  conda create -n myenv python=3.9 pip
+  conda activate myenv
+  pip install -e .
+```
+
 Testing
 -------
 
