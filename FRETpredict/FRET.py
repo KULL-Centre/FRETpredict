@@ -149,9 +149,13 @@ class FRETpredict(Operations):
         self.weights = kwargs.get('weights', False)
         self.user_weights = kwargs.get('user_weights', None)
         self.stdev = kwargs.get('filter_stdev', 0.02)
+        self.verbose = kwargs.get('verbose', False)
 
         # Logging set up
-        logging.basicConfig(filename=kwargs.get('log_file', 'log'), level=logging.INFO)
+        if self.verbose:
+            logging.basicConfig(filename=kwargs.get('log_file', 'log'), level=logging.INFO)
+        else:
+            logging.basicConfig(filename=kwargs.get('log_file', 'log'), level=logging.DEBUG)
 
         # Write the string for the placement residues selection
         for i in range(2):
@@ -420,7 +424,7 @@ class FRETpredict(Operations):
                     # If dyes pair has no spectral overlap, skip iteration
                     if self.r0 == 0:
 
-                        print('\nDyes pair R0 = 0!')
+                        logging.debug('Dyes pair R0 = 0!')
                         continue
 
                 # Calculate (r/r0)^6 factor for FRET efficiency calculations
@@ -583,7 +587,6 @@ class FRETpredict(Operations):
         # k2, Static, Dynamic1, and Dynamic2 averaging
         # Create DataFrame if only one value of k2 is present (only 1 protein structure/frame provided)
         if k2.size == 1:
-
             df = pd.Series([k2, estatic, edynamic1, edynamic2], index=['k2', 'Estatic', 'Edynamic1', 'Edynamic2'])
 
         # Create DataFrame of weighted averaged values
@@ -595,7 +598,7 @@ class FRETpredict(Operations):
                                self.weightedAvgSDSE(edynamic2[np.isfinite(k2)], self.weights[np.isfinite(k2)])],
                               columns=['Average', 'SD', 'SE'], index=['k2', 'Estatic', 'Edynamic1', 'Edynamic2'])
 
-        print(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
+        logging.debug(f'Effective fraction of frames contributing to average: {self.fraction_frames()}')
 
         # Save DataFrame in pickle format
         df.to_pickle(output_reweight_prefix + '-data-{:d}-{:d}.pkl'.format(self.residues[0], self.residues[1]))
@@ -644,4 +647,4 @@ class FRETpredict(Operations):
         # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
         self.save()
 
-        print('\nDone.')
+        logging.info('Done')

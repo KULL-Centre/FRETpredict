@@ -305,10 +305,11 @@ class Operations(object):
         universe.load_new(probe_coords, format=MemoryReader, order='afc')
 
         # Save aligned rotamers
-        rotamers = universe.select_atoms("all")
-        with MDAnalysis.Writer(lib.name + ".pdb", rotamers.n_atoms) as W:
-            for ts in universe.trajectory:
-                W.write(rotamers)
+        if self.verbose:
+            rotamers = universe.select_atoms("all")
+            with MDAnalysis.Writer(lib.name.replace(' ','_')+'.pdb', rotamers.n_atoms) as W:
+                for ts in universe.trajectory:
+                    W.write(rotamers)
 
         return universe
 
@@ -491,7 +492,7 @@ class Operations(object):
                           skip_footer=0,
                           delimiter=' ')
 
-        # Check if single-frame structure                  
+        # Check if single-frame structure
         if np.shape(Z) == (2,):
 
             w_s = np.array([1.0])

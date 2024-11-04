@@ -22,7 +22,6 @@ logger = logging.getLogger("MDAnalysis.app")
 #: Name of the directory in the package that contains the library data.
 LIBDIR = "lib"
 
-
 def find_file(filename, pkglibdir=LIBDIR):
 
     """
@@ -116,18 +115,16 @@ class RotamerLibrary(object):
         self.lib['filename'] = find_file(self.lib['filename'][:-2] + name.split(' cutoff')[1])
 
         # Print logging information
-        logger.debug("[rotamers] ensemble {:s} with topology {:s}.pdb".format(self.lib['filename'],
+        logger.info("[rotamers] ensemble {:s} with topology {:s}.pdb".format(self.lib['filename'],
                                                                               self.lib['filename'].split('_cutoff')[0]))
-        logger.debug("[rotamers] populations {:s}".format(self.lib['filename'] + '_weights.txt'))
+        logger.info("[rotamers] populations {:s}".format(self.lib['filename'] + '_weights.txt'))
 
         # If trajectory is not found
         if not os.path.isfile(self.lib['filename'] + '.dcd'):
-
             raise ValueError("No trajectory named {0}.dcd".format(self.lib['filename']))
 
         # If weights are not found
         if not os.path.isfile(self.lib['filename'] + '_weights.txt'):
-
             raise ValueError("No file named {0}_weights.txt".format(self.lib['filename'] + '_weights.txt'))
 
         # Rotamers parameters
@@ -161,5 +158,4 @@ class RotamerLibrary(object):
 
         """
 
-        return "<RotamerLibrary '{0}' by {1} with {2} rotamers>".format(self.name, self.lib['author'],
-                                                                        len(self.weights) - 2)
+        return "<RotamerLibrary '{0}' by {1} with {2} rotamers>".format(self.name, self.lib['author'], len(self.weights) - 2)
