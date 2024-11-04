@@ -307,7 +307,7 @@ class Operations(object):
         # Save aligned rotamers
         if self.verbose:
             rotamers = universe.select_atoms("all")
-            with MDAnalysis.Writer(lib.name.replace(' ','_')+'.pdb', rotamers.n_atoms) as W:
+            with MDAnalysis.Writer(self.output_prefix+'_'+lib.name.replace(' ','_')+'.pdb', rotamers.n_atoms) as W:
                 for ts in universe.trajectory:
                     W.write(rotamers)
 

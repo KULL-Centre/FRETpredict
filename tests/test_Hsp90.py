@@ -21,7 +21,8 @@ def test_Hsp90_R0_calculation():
                    electrostatic=True,
                    libname_1='AlexaFluor 594 C1R cutoff30',
                    libname_2='AlexaFluor 568 C1R cutoff30',
-                   output_prefix='tests/test_systems/Hsp90/output/E30')
+                   output_prefix='tests/test_systems/Hsp90/output/E30',
+                   verbose=True)
 
     # Run FRETpredict calculations
     FRET.run()
@@ -43,7 +44,8 @@ def test_Hsp90_fixed_R0():
                            fixed_R0=True, r0=5.5, electrostatic=True,
                            libname_1='AlexaFluor 594 C1R cutoff30',
                            libname_2='AlexaFluor 568 C1R cutoff30',
-                           output_prefix='tests/test_systems/Hsp90/output/E30_fixedR0')
+                           output_prefix='tests/test_systems/Hsp90/output/E30_fixedR0',
+                           verbose=True)
 
     # Run FRETpredict calculations
     FRET_fixedR0.run()
@@ -52,8 +54,4 @@ def test_Hsp90_fixed_R0():
     print(pd.read_pickle('tests/test_systems/Hsp90/output/E30_fixedR0-data-452-637.pkl')['Estatic'])
     assert np.abs(pd.read_pickle('tests/test_systems/Hsp90/output/E30_fixedR0-data-452-637.pkl')['Estatic'] - 0.538) < 1e-3,  \
     "Could not read FRET data from file (fixed R0)"
-
-
-
-
 
