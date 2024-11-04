@@ -1,6 +1,6 @@
 ATTO 390 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T39_C2R_cutoff30
   licence: GPLv3
   mu:
@@ -12,7 +12,7 @@ ATTO 390 C2R:
   - C7 and resname T39
 ATTO 390 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T39_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -24,7 +24,7 @@ ATTO 390 L1R:
   - C7 and resname T39
 ATTO 425 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T42_C2R_cutoff30
   licence: GPLv3
   mu:
@@ -36,7 +36,7 @@ ATTO 425 C2R:
   - C7 and resname T42
 ATTO 425 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T42_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -48,7 +48,7 @@ ATTO 425 L1R:
   - C7 and resname T42
 ATTO 465 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T46_C2R_cutoff30
   licence: GPLv3
   mu:
@@ -63,7 +63,7 @@ ATTO 465 C2R:
   - N1 and resname T46
 ATTO 465 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T46_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -78,7 +78,7 @@ ATTO 465 L1R:
   - N1 and resname T46
 ATTO 488 C3R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T48_C3R_cutoff30
   licence: GPLv3
   mu:
@@ -94,7 +94,7 @@ ATTO 488 C3R:
   - C15 and resname T48
 ATTO 495 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T49_C2R_cutoff30
   licence: GPLv3
   mu:
@@ -107,7 +107,7 @@ ATTO 495 C2R:
   - N1 and resname T49
 ATTO 495 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T49_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -120,7 +120,7 @@ ATTO 495 L1R:
   - N1 and resname T49
 ATTO 520 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T52_C2R_cutoff30
   licence: GPLv3
   mu:
@@ -134,7 +134,7 @@ ATTO 520 C2R:
   - C7 and resname T52
 ATTO 520 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T52_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -148,7 +148,7 @@ ATTO 520 L1R:
   - C7 and resname T52
 ATTO 610 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T61_C2R_cutoff30
   licence: GPLv3
   mu:
@@ -162,7 +162,7 @@ ATTO 610 C2R:
   - C8 and resname T61
 ATTO 610 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: T61_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -176,7 +176,7 @@ ATTO 610 L1R:
   - C8 and resname T61
 ATTO Thio12 C3R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: Tth_C3R_cutoff30
   licence: GPLv3
   mu:
@@ -190,7 +190,7 @@ ATTO Thio12 C3R:
   - C9 and resname Tth
 AlexaFluor 350 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A35_C1R_cutoff30
   licence: GPLv3
   mu:
@@ -204,7 +204,7 @@ AlexaFluor 350 C1R:
   - C5 and resname A35
 AlexaFluor 350 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A35_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -218,7 +218,7 @@ AlexaFluor 350 L1R:
   - C5 and resname A35
 AlexaFluor 488 B1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A48_B1R_cutoff30
   licence: GPLv3
   mu:
@@ -235,7 +235,7 @@ AlexaFluor 488 B1R:
   - C7 and resname A48
 AlexaFluor 488 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A48_C1R_cutoff30
   licence: GPLv3
   mu:
@@ -252,7 +252,7 @@ AlexaFluor 488 C1R:
   - C7 and resname A48
 AlexaFluor 488 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A48_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -269,7 +269,7 @@ AlexaFluor 488 L1R:
   - C7 and resname A48
 AlexaFluor 532 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A53_C1R_cutoff30
   licence: GPLv3
   mu:
@@ -285,7 +285,7 @@ AlexaFluor 532 C1R:
   - C7 and resname A53
 AlexaFluor 532 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A53_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -301,7 +301,7 @@ AlexaFluor 532 L1R:
   - C7 and resname A53
 AlexaFluor 568 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A56_C1R_cutoff30
   licence: GPLv3
   mu:
@@ -318,7 +318,7 @@ AlexaFluor 568 C1R:
   - C10 and resname A56
 AlexaFluor 568 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A56_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -335,7 +335,7 @@ AlexaFluor 568 L1R:
   - C10 and resname A56
 AlexaFluor 594 C1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A59_C1R_cutoff30
   licence: GPLv3
   mu:
@@ -352,7 +352,7 @@ AlexaFluor 594 C1R:
   - C10 and resname A59
 AlexaFluor 594 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A59_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -369,7 +369,7 @@ AlexaFluor 594 L1R:
   - C10 and resname A59
 AlexaFluor 647 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A64_C2R_cutoff30
   licence: GPLv3
   mu:
@@ -387,7 +387,7 @@ AlexaFluor 647 C2R:
   - C29 and resname A64
 AlexaFluor 647 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: A64_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -466,7 +466,7 @@ Lumiprobe Cy5 C2R:
   - CX3
 Lumiprobe Cy5.5 C2R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: C55_C2R_cutoff30
   licence: GPLv3
   mu:
@@ -480,7 +480,7 @@ Lumiprobe Cy5.5 C2R:
   - C39 and resname C55
 Lumiprobe Cy5.5 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: C55_L1R_cutoff30
   licence: GPLv3
   mu:
@@ -494,7 +494,7 @@ Lumiprobe Cy5.5 L1R:
   - C39 and resname C55
 Lumiprobe Cy7.5 L1R:
   author: D Montepietra, G Tesei, JM Martins, MBA Kunze, RB Best, K Lindorff-Larsen
-  citation: TBD
+  citation: https://doi.org/10.1038/s42003-024-05910-6
   filename: C75_L1R_cutoff30
   licence: GPLv3
   mu:

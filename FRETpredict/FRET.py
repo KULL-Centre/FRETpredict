@@ -153,9 +153,11 @@ class FRETpredict(Operations):
 
         # Logging set up
         if self.verbose:
-            logging.basicConfig(filename=kwargs.get('log_file', 'log'), level=logging.INFO)
-        else:
             logging.basicConfig(filename=kwargs.get('log_file', 'log'), level=logging.DEBUG)
+            logging.root.setLevel(logging.DEBUG)
+        else:
+            logging.basicConfig(filename=kwargs.get('log_file', 'log'), level=logging.INFO)
+            logging.root.setLevel(logging.INFO)
 
         # Write the string for the placement residues selection
         for i in range(2):
@@ -167,7 +169,7 @@ class FRETpredict(Operations):
                 residue_sel += " and segid {:s}".format(self.chains[i])
 
             # Logging information on the selected residues
-            logging.info('{:s} = {:s}'.format(residue_sel, self.protein.select_atoms(residue_sel).atoms.resnames[0]))
+            logging.debug('{:s} = {:s}'.format(residue_sel, self.protein.select_atoms(residue_sel).atoms.resnames[0]))
 
         # Raise error if the specified placement residues are different from two
         if len(residues) != 2:
@@ -337,7 +339,7 @@ class FRETpredict(Operations):
         """
 
         # Print info
-        logging.info("Starting rotamer distance analysis of trajectory {:s} with labeled residues "
+        logging.debug("Starting rotamer distance analysis of trajectory {:s} with labeled residues "
                      "{:d} and {:d}".format(self.protein.trajectory.filename, self.residues[0], self.residues[1]))
 
         # Create H5PY file
@@ -511,7 +513,7 @@ class FRETpredict(Operations):
                 if self.weights.size != k2.size:
 
                     # Warning log
-                    logging.info('Weights array has size {} whereas the number of frames is {}'.
+                    logging.debug('Weights array has size {} whereas the number of frames is {}'.
                                  format(self.weights.size, k2.size))
 
                     # Raise error
@@ -534,7 +536,7 @@ class FRETpredict(Operations):
                 if self.user_weights.size != k2.size:
 
                     # Warning log
-                    logging.info('User weights array has size {} whereas the number of frames is {}'.
+                    logging.debug('User weights array has size {} whereas the number of frames is {}'.
                                  format(self.user_weights.size, k2.size))
 
                     # Raise error
@@ -553,7 +555,7 @@ class FRETpredict(Operations):
             else:
 
                 # Warning log
-                logging.info('User weights argument should be a numpy array')
+                logging.debug('User weights argument should be a numpy array')
 
                 # Raise error
                 raise ValueError('User weights argument should be a numpy array')
@@ -647,4 +649,4 @@ class FRETpredict(Operations):
         # Calculate k2 distribution and k2, Static, Dynamic1, Dynamic2 averaging. Save data to file.
         self.save()
 
-        logging.info('Done')
+        logging.debug('Done')

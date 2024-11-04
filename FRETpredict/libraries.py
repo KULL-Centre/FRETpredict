@@ -17,7 +17,9 @@ import pkg_resources
 import yaml
 
 # Create logger
-logger = logging.getLogger("MDAnalysis.app")
+#logger = logging.getLogger("MDAnalysis.app")
+#logger.setLevel(logging.DEBUG)
+#logger.root.setLevel(logging.DEBUG)
 
 #: Name of the directory in the package that contains the library data.
 LIBDIR = "lib"
@@ -107,17 +109,14 @@ class RotamerLibrary(object):
             raise ValueError("No rotamer library with name {0} known: must be one of {1}".format(
                 name, list(LIBRARIES.keys())))
 
-        # Print logging information
-        logger.info("Using rotamer library '{0}' by {1[author]}".format(self.name, self.lib))
-        logger.info("Please cite: {0[citation]}".format(self.lib))
-
         # Obtain filename path
         self.lib['filename'] = find_file(self.lib['filename'][:-2] + name.split(' cutoff')[1])
 
         # Print logging information
-        logger.info("[rotamers] ensemble {:s} with topology {:s}.pdb".format(self.lib['filename'],
-                                                                              self.lib['filename'].split('_cutoff')[0]))
-        logger.info("[rotamers] populations {:s}".format(self.lib['filename'] + '_weights.txt'))
+        #logger.debug("Using rotamer library '{0}' by {1[author]}".format(self.name, self.lib))
+        #logger.debug("Please cite: {0[citation]}".format(self.lib))
+        #logger.debug("[rotamers] ensemble {:s} with topology {:s}.pdb".format(self.lib['filename'],self.lib['filename'].split('_cutoff')[0]))
+        #logger.debug("[rotamers] populations {:s}".format(self.lib['filename'] + '_weights.txt'))
 
         # If trajectory is not found
         if not os.path.isfile(self.lib['filename'] + '.dcd'):
