@@ -401,8 +401,10 @@ class FRETpredict(Operations):
                     # Warning for Z < Z_cutoff
                     #print('\nZ < Z_cutoff')
 
-                    # If Z value < cutoff then create an empty array for k2 values with same dimension as Z array, to save
-                    allk2 = np.zeros_like(allZ, dtype=float)
+
+                    if self.calc_distr:
+                        # If Z value < cutoff then create an empty array for k2 values with same dimension as Z array, to save
+                        allk2 = np.zeros_like(allZ, dtype=float)
 
                     # Skip to next iteration
                     continue
@@ -460,9 +462,8 @@ class FRETpredict(Operations):
                     # Write the calculated distribution for each frame in the H5PY dataset
                     try:
                         distributions[frame_ndx] = distribution
-
-                except:
-                    continue
+                    except:
+                        continue
 
         if self.calc_distr:
             # Close H5PY file
