@@ -150,6 +150,7 @@ class FRETpredict(Operations):
         self.user_weights = kwargs.get('user_weights', None)
         self.stdev = kwargs.get('filter_stdev', 0.02)
         self.verbose = kwargs.get('verbose', False)
+        self.calc_distr = kwargs.get('calc_distr', True)
 
         # Logging set up
         if self.verbose:
@@ -342,12 +343,13 @@ class FRETpredict(Operations):
         logging.debug("Starting rotamer distance analysis of trajectory {:s} with labeled residues "
                      "{:d} and {:d}".format(self.protein.trajectory.filename, self.residues[0], self.residues[1]))
 
-        # Create H5PY file
-        f = h5py.File(self.output_prefix + '-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "w")
+        if self.calc_distr:
+            # Create H5PY file
+            f = h5py.File(self.output_prefix + '-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "w")
 
-        # Initialize a H5PY dataset named "distributions", with shape = (n_frames, rax.size))
-        distributions = f.create_dataset("distributions", (self.protein.trajectory.n_frames, self.rax.size),
-                                         fillvalue=0, compression="gzip")
+            # Initialize a H5PY dataset named "distributions", with shape = (n_frames, rax.size))
+            distributions = f.create_dataset("distributions", (self.protein.trajectory.n_frames, self.rax.size),
+                                             fillvalue=0, compression="gzip")
 
         # Select placement residue atoms, compute Lennard-Jones and Electrostatic (Debye-Huckel) parameters for
         # Chromophore rotamers and Protein
@@ -364,8 +366,9 @@ class FRETpredict(Operations):
         esta_avg = np.full(self.protein.trajectory.n_frames, np.nan)
         edyn1_avg = np.full(self.protein.trajectory.n_frames, np.nan)
         edyn2_avg = np.full(self.protein.trajectory.n_frames, np.nan)
-        allk2 = np.empty(0)
-        allZ = np.empty(0)
+        if self.calc_distr:
+            allk2 = np.empty(0)
+            allZ = np.empty(0)
 
         with Bar('FRET calculation') as bar:
             for frame_ndx, _ in enumerate(self.protein.trajectory):
@@ -386,8 +389,9 @@ class FRETpredict(Operations):
                 # Calculate normalized Boltzmann weights (combined probability of the two dyes for each frame)
                 boltzmann_weights_norm = (boltz1.reshape(-1, 1) * boltz2).flatten()
 
-                # Create array of partition function values
-                allZ = np.append(allZ, boltzmann_weights_norm.flatten())
+                if self.calc_distr:
+                    # Create array of partition function values
+                    allZ = np.append(allZ, boltzmann_weights_norm.flatten())
 
                 # Append Boltzmann partition functions of the two dyes for the frame to the array
                 zarray = np.append(zarray, [z1, z2])
@@ -409,8 +413,9 @@ class FRETpredict(Operations):
                 # Calculate Orientation factor k2 for each donor-acceptor rotamer combination
                 k2 = np.power(mu_cosine - 3 * r_mu_1 * r_mu_2, 2).flatten()
 
-                # Create array of k2 values
-                allk2 = np.append(allk2, k2.flatten())
+                if self.calc_distr:
+                    # Create array of k2 values
+                    allk2 = np.append(allk2, k2.flatten())
 
                 # Orientation factor for dynamic averaging is weighted by rotamers probability (Boltzmann weights),
                 # to account for reduced weight of high energy conformations
@@ -433,6 +438,7 @@ class FRETpredict(Operations):
                 ratio6 = np.power(rdist / self.r0, 6)
 
                 # Calculation of average FRET efficiencies distributions
+
                 # Static Regime
                 estatic = 1. / (1 + 2 / 3. * np.divide(ratio6, k2))
                 esta_avg[frame_ndx] = np.dot(estatic, boltzmann_weights_norm)
@@ -448,26 +454,24 @@ class FRETpredict(Operations):
                 # Calculate normalized rdist between 0 and 1
                 rdist = np.round((self.nr * (rdist - self.rmin)) / (self.rmax - self.rmin)).astype(int).flatten()
 
-                # Calculate weighted distribution of center-to-center distances between the two chromophores
-                distribution = np.bincount(rdist, weights=boltzmann_weights_norm.flatten(), minlength=self.rax.size)
-
-                # Write the calculated distribution for each frame in the H5PY dataset
-                try:
-
-                    distributions[frame_ndx] = distribution
+                if self.calc_distr:
+                    # Calculate weighted distribution of center-to-center distances between the two chromophores
+                    distribution = np.bincount(rdist, weights=boltzmann_weights_norm.flatten(), minlength=self.rax.size)
+                    # Write the calculated distribution for each frame in the H5PY dataset
+                    try:
+                        distributions[frame_ndx] = distribution
 
                 except:
-
                     continue
 
-        # Close H5PY file
-        f.close()
+        if self.calc_distr:
+            # Close H5PY file
+            f.close()
 
-        # Save distributions to file
-        # Save k2 weighted distribution
-        np.savetxt(self.output_prefix + '-Pk2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
-                   np.c_[np.arange(0.0, 4.02, .04)[:-1] + .02,
-                         np.histogram(allk2, bins=np.arange(0.0, 4.02, .04), density=True, weights=allZ)[0]])
+            # Save k2 weighted distribution
+            np.savetxt(self.output_prefix + '-Pk2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+                       np.c_[np.arange(0.0, 4.02, .04)[:-1] + .02,
+                             np.histogram(allk2, bins=np.arange(0.0, 4.02, .04), density=True, weights=allZ)[0]])
 
         # Save Partition function distribution
         np.savetxt(self.output_prefix + '-Z-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
@@ -477,16 +481,16 @@ class FRETpredict(Operations):
         np.savetxt(self.output_prefix + '-w_s-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
                    self.calculate_ws())
 
-        # Save <k2> distribution
+        # Save per-frame <k2>
         np.savetxt(self.output_prefix + '-k2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), k2_avg)
 
-        # Save <E>_static distribution
+        # Save <E>_static
         np.savetxt(self.output_prefix + '-Es-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), esta_avg)
 
-        # Save <E>_dynamic1 distribution
+        # Save <E>_dynamic1
         np.savetxt(self.output_prefix + '-Ed1-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), edyn1_avg)
 
-        # Save <E>_dynamic2 distribution
+        # Save <E>_dynamic2
         np.savetxt(self.output_prefix + '-Ed2-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]), edyn2_avg)
 
     def save(self, **kwargs):
@@ -560,26 +564,28 @@ class FRETpredict(Operations):
                 # Raise error
                 raise ValueError('User weights argument should be a numpy array')
 
-        # Read data from H5PY file
-        f = h5py.File(self.output_prefix + '-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "r")
 
-        # Read distribution data from H5PY file
-        distributions = f.get('distributions')
+        if self.calc_distr:
+            # Read data from H5PY file
+            f = h5py.File(self.output_prefix + '-{:d}-{:d}.hdf5'.format(self.residues[0], self.residues[1]), "r")
 
-        # Calculate the sum of the weighted distribution
-        distribution = np.nansum(distributions * self.weights.reshape(-1, 1), 0)
+            # Read distribution data from H5PY file
+            distributions = f.get('distributions')
 
-        # Calculate smoothed distance distribution
-        frame_inv_distr = np.fft.ifft(distribution) * np.fft.ifft(np.exp(-0.5 * (self.rax / self.stdev) ** 2))
-        smoothed = np.real(np.fft.fft(frame_inv_distr))
-        smoothed /= np.trapz(smoothed, self.rax)
+            # Calculate the sum of the weighted distribution
+            distribution = np.nansum(distributions * self.weights.reshape(-1, 1), 0)
 
-        # Save distance distribution to file
-        np.savetxt(self.output_prefix + '-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
-                   np.c_[self.rax[100:-100], smoothed[200:]], header='distance distribution')
+            # Calculate smoothed distance distribution
+            frame_inv_distr = np.fft.ifft(distribution) * np.fft.ifft(np.exp(-0.5 * (self.rax / self.stdev) ** 2))
+            smoothed = np.real(np.fft.fft(frame_inv_distr))
+            smoothed /= np.trapz(smoothed, self.rax)
 
-        # Close H5PY file
-        f.close()
+            # Save distance distribution to file
+            np.savetxt(self.output_prefix + '-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]),
+                       np.c_[self.rax[100:-100], smoothed[200:]], header='distance distribution')
+
+            # Close H5PY file
+            f.close()
 
         # Read FRET Efficiency data from file
         estatic = np.loadtxt(self.output_prefix + '-Es-{:d}-{:d}.dat'.format(self.residues[0], self.residues[1]))
