@@ -123,14 +123,21 @@ Compute reweighted FRET efficiency based on protein-dye interactions
 
 ```python
 
-FRET.reweight(reweight_prefix='E_pp11_reweighted')
+FRET.reweight(boltzmann_weights=True, reweight_output_prefix='E_pp11_reweighted')
 
 ```
-and combine user-provided weights from previous calculations (e.g., Enhanced sampling simulations)
+and combine user-provided weights (numpy array) from previous calculations (e.g., Enhanced sampling simulations)
 
 ```python
 
-FRET.reweight(reweight_prefix='E_pp11_reweighted', user_weights=user_weights_pp11)
+FRET.reweight(boltzmann_weights=True, user_weights=user_weights_pp11, reweight_output_prefix='E_pp11_reweighted')
+
+```
+User-provided weights alone can be used to reweight the ensemble. In this case Boltzmann weights are not used and only frames with steric clashes between dye and protein are discarded
+
+```python
+
+FRET.reweight(boltzmann_weights=False, user_weights=user_weights_pp11, reweight_output_prefix='E_pp11_reweighted')
 
 ```
 
