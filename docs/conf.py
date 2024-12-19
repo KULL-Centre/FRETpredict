@@ -17,7 +17,7 @@
 project = 'FRETpredict'
 copyright = '2023, Daniele Montepietra, Giulio Tesei, João M Martins, Micha BA Kunze, Robert Best, Kresten Lindorff-Larsen.'
 author = 'Daniele Montepietra, Giulio Tesei, João M Martins, Micha BA Kunze, Robert Best, Kresten Lindorff-Larsen.'
-release = '0.1.8'
+release = '0.2.8'
 source_suffix = ['.rst', '.md']
 master_doc = 'index'
 extensions = ['recommonmark', 'sphinx.ext.todo', 'sphinx.ext.mathjax', 'sphinx_math_dollar', 'sphinx.ext.ifconfig','sphinx_markdown_tables']
