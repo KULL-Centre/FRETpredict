@@ -4,6 +4,6 @@ from .utils import Operations
 from .lennardjones import lj_parameters
 from .libraries import *
 
-__version__ = '0.2.7'
+__version__ = '0.2.8'
 
 

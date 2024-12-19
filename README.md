@@ -119,21 +119,22 @@ FRET = FRETpredict(protein=u, residues=[0, 12], chains=['A', 'A'], temperature=2
 FRET.run()
 
 ```
-Compute reweighted FRET efficiency based on protein-dye interactions
+Here is how to reweight the trajectory by per-frame dye-protein weights. 
 
 ```python
 
 FRET.reweight(boltzmann_weights=True, reweight_output_prefix='E_pp11_reweighted')
 
 ```
-and combine user-provided weights (numpy array) from previous calculations (e.g., Enhanced sampling simulations)
+Per-frame dye-protein weights can be combined with user-provided weights (numpy array) from previous calculations (e.g., Enhanced sampling simulations), which are passed as a numpy array to the `user_weights` attribute.
 
 ```python
 
 FRET.reweight(boltzmann_weights=True, user_weights=user_weights_pp11, reweight_output_prefix='E_pp11_reweighted')
 
 ```
-User-provided weights alone can be used to reweight the ensemble. In this case Boltzmann weights are not used and only frames with steric clashes between dye and protein are discarded
+
+User-provided weights alone can be used to reweight the ensemble. In this case Boltzmann weights are not used and only frames with steric clashes between dye and protein are discarded (default behaviour).
 
 ```python
 
